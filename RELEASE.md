@@ -10,7 +10,7 @@ Keep it **outside** the repo and back it up — losing it means contacting Play 
 
 ```sh
 keytool -genkeypair -v \
-  -keystore "C:/Users/karso/keys/todoapp-upload.jks" \
+  -keystore "./todoapp-upload.jks" \
   -alias upload -keyalg RSA -keysize 2048 -validity 10000
 ```
 

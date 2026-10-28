@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Brand checkmark (web .mark glyph "M5 12.5 l4.5 4.5 L19 7.5"), scaled x3 and centered in the
-     108 viewport within the adaptive-icon safe zone. Also reused as the monochrome layer. -->
+<!-- Brand checkmark (web .mark glyph "M5 12.5 l4.5 4.5 L19 7.5"), centered in the 108 viewport.
+     Sized so that after the launcher masks/zooms into the inner 72dp safe zone, the mark lands at
+     the same proportions as the 512 store icon (play/store-icon-512.svg) — ~37% width, centered —
+     so the homescreen icon matches the store listing. Also reused as the monochrome layer. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -9,8 +11,8 @@
     <path
         android:fillColor="#00000000"
         android:strokeColor="#FFFFFF"
-        android:strokeWidth="7.8"
+        android:strokeWidth="4.97"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M33,54.75 L46.5,68.25 L75,39.75" />
+        android:pathData="M40.61,54.48 L49.22,63.08 L67.39,44.92" />
 </vector>
