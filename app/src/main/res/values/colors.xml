@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graphite design tokens (light). Mirrors :root in styles.css of ToDoApp-js.
+     Dark overrides live in values-night/colors.xml. -->
+<resources>
+    <color name="bg">#FFFFFF</color>
+    <color name="panel">#F6F6F7</color>
+    <color name="fg">#111113</color>
+    <color name="muted">#6B6B73</color>
+    <color name="muted_2">#C4C4CB</color>
+    <color name="line">#E8E8EB</color>
+    <color name="accent">#111113</color>
+    <color name="on_accent">#FFFFFF</color>
+    <color name="warn">#D9480F</color>
+    <color name="scrim">#52111113</color>
+</resources>

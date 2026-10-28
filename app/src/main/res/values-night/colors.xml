@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graphite design tokens (dark). Mirrors :root[data-theme="dark"] in styles.css. -->
+<resources>
+    <color name="bg">#0E0E10</color>
+    <color name="panel">#18181B</color>
+    <color name="fg">#EDEDEF</color>
+    <color name="muted">#8B8B93</color>
+    <color name="muted_2">#45454C</color>
+    <color name="line">#232327</color>
+    <color name="accent">#EDEDEF</color>
+    <color name="on_accent">#0E0E10</color>
+    <color name="warn">#FF7A45</color>
+    <color name="scrim">#99000000</color>
+</resources>

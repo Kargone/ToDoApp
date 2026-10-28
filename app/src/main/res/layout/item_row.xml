@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/bg"
+    android:gravity="center_vertical"
+    android:minHeight="48dp"
+    android:orientation="horizontal"
+    android:paddingStart="8dp"
+    android:paddingTop="7dp"
+    android:paddingEnd="6dp"
+    android:paddingBottom="7dp">
+
+    <!-- Circle checkbox -->
+    <FrameLayout
+        android:id="@+id/row_check"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="?attr/selectableItemBackgroundBorderless">
+
+        <View
+            android:id="@+id/check_circle"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_chk" />
+
+        <ImageView
+            android:id="@+id/check_tick"
+            android:layout_width="11dp"
+            android:layout_height="11dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_check"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/row_repeat_lead"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_repeat"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- Body -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/row_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/fg"
+            android:textSize="14sp" />
+
+        <!-- Inline rename field: shown in place of row_title while a task is being renamed. -->
+        <EditText
+            android:id="@+id/row_title_edit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:imeOptions="actionDone"
+            android:inputType="textCapSentences"
+            android:minHeight="0dp"
+            android:padding="0dp"
+            android:singleLine="true"
+            android:textColor="@color/fg"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/row_meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:textColor="@color/muted"
+            android:textSize="12sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Time column -->
+    <TextView
+        android:id="@+id/row_time"
+        android:layout_width="52dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:fontFamily="monospace"
+        android:gravity="end"
+        android:textColor="@color/muted"
+        android:textSize="11sp" />
+
+    <!-- Trailing menu -->
+    <ImageButton
+        android:id="@+id/row_menu"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/account"
+        android:padding="6dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_dots" />
+</LinearLayout>

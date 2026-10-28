@@ -1,0 +1,77 @@
+<resources>
+    <string name="app_name">ToDo</string>
+
+    <!-- Header -->
+    <string name="brand">ToDo</string>
+    <string name="search">Search</string>
+    <string name="switch_theme">Switch theme</string>
+    <string name="account">Account</string>
+    <string name="search_this_list">Search this list</string>
+    <string name="clear_search">Clear search</string>
+
+    <!-- Sign-in -->
+    <string name="sign_in_subtitle">Sign in to sync your tasks across devices</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="sign_out">Sign out</string>
+
+    <!-- Tabs -->
+    <string name="tab_today">Today</string>
+    <string name="tab_tomorrow">Tomorrow</string>
+    <string name="tab_next3">Next 3 days</string>
+    <string name="tab_next_month">Next month</string>
+    <string name="tab_later">Later</string>
+    <string name="tab_projects">Projects</string>
+    <string name="tab_repeating">Repeating</string>
+    <string name="tab_completed">Completed</string>
+
+    <!-- List -->
+    <string name="empty_state">Nothing here.</string>
+    <string name="new_item">New item</string>
+    <string name="new_project">New project</string>
+
+    <!-- Add sheet -->
+    <string name="sheet_new_item">New item</string>
+    <string name="type_task">Task</string>
+    <string name="type_event">Event</string>
+    <string name="title_hint">What needs doing?</string>
+    <string name="due_day">Due day</string>
+    <string name="time_optional">Time (optional)</string>
+    <string name="start_day">Start day</string>
+    <string name="start_time">Start time</string>
+    <string name="end_time">End time</string>
+    <string name="no_due_date">No due date</string>
+    <string name="place_in">Place in</string>
+    <string name="project">Project</string>
+    <string name="no_project">No project</string>
+    <string name="also_show_in_date_tabs">Also show in date tabs</string>
+    <string name="new_project_name">Project name</string>
+    <string name="sub_project_name">Sub-project name</string>
+    <string name="rename_project">Rename project</string>
+    <string name="move_under">Move under…</string>
+    <string name="top_level">Top level</string>
+    <string name="no_other_project">There is no other project to move this under.</string>
+    <string name="cancel">Cancel</string>
+    <string name="add">Add</string>
+    <string name="save">Save</string>
+
+    <string name="delete_item_confirm">Delete this item? This cannot be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="events_need_times">Events require both start and end times.</string>
+    <string name="pick_date">Pick a date</string>
+    <string name="pick_time">Pick a time</string>
+    <string name="no_date">—</string>
+
+    <!-- Repeat -->
+    <string name="repeat">Repeat</string>
+    <string name="repeat_every">Every</string>
+    <string name="reveal_time">Reveal time (optional)</string>
+    <string name="repeat_on">Repeat on</string>
+    <string name="monthly_pattern">Monthly pattern</string>
+    <string name="days_of_month">Days of month</string>
+    <string name="days_of_month_hint">e.g. 1, 15, 28</string>
+    <string name="week_of_month">Week of month</string>
+    <string name="day_of_week">Day of week</string>
+    <string name="stop_on">Stop on (optional)</string>
+    <string name="edit_repeat_rule">Edit repeat rule</string>
+    <string name="save_repeat_rule">Save repeat rule</string>
+</resources>

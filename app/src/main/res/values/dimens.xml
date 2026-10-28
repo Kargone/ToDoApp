@@ -1,0 +1,9 @@
+<resources>
+    <dimen name="content_max_width">680dp</dimen>
+    <dimen name="gutter">16dp</dimen>
+    <dimen name="r_xs">4dp</dimen>
+    <dimen name="r_sm">6dp</dimen>
+    <dimen name="r_md">8dp</dimen>
+    <dimen name="r_lg">12dp</dimen>
+    <dimen name="hairline">1dp</dimen>
+</resources>
