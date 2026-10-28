@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Play Store hi-res icon master (512x512). Graphite brand mark: dark square, white checkmark.
+     Export to a 512x512 32-bit PNG for the listing (Play does its own corner masking). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#111113"/>
+  <path d="M160.8 259.4 L222 320.6 L351.2 191.4"
+        fill="none" stroke="#FFFFFF" stroke-width="35.4"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
