@@ -7,6 +7,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.karson.todoapp.auth.GoogleAuthManager;
 
 /**
@@ -19,6 +20,13 @@ public class SignInActivity extends AppCompatActivity {
     private GoogleAuthManager authManager;
     private View signInButton;
     private View progress;
+    private boolean navigating;
+
+    /** Fires whenever Firebase auth state changes; a non-null user means we're in — go to the app.
+     *  This catches a sign-in even if the per-call callback was lost to an activity recreation. */
+    private final FirebaseAuth.AuthStateListener authStateListener = firebaseAuth -> {
+        if (firebaseAuth.getCurrentUser() != null) goToApp();
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,10 +52,15 @@ public class SignInActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // Already signed in (returning user, or signed in on another screen) → skip the gate.
-        if (authManager.isSignedIn()) {
-            goToApp();
-        }
+        // Fires immediately with the current state (covers a returning user) and again if the sign-in
+        // completes while this screen is in the foreground. Removed in onStop to avoid leaks.
+        authManager.addAuthStateListener(authStateListener);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        authManager.removeAuthStateListener(authStateListener);
     }
 
     private void startSignIn() {
@@ -55,7 +68,7 @@ public class SignInActivity extends AppCompatActivity {
         authManager.signIn(this, new GoogleAuthManager.SignInCallback() {
             @Override
             public void onSuccess(com.google.firebase.auth.FirebaseUser user) {
-                goToApp();
+                goToApp(); // the auth-state listener usually gets here first; goToApp is idempotent
             }
 
             @Override
@@ -74,6 +87,8 @@ public class SignInActivity extends AppCompatActivity {
     }
 
     private void goToApp() {
+        if (navigating) return; // guard against the listener and the callback both firing
+        navigating = true;
         startActivity(new Intent(this, MainActivity.class));
         finish();
     }

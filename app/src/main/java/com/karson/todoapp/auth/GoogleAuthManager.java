@@ -49,6 +49,19 @@ public class GoogleAuthManager {
         return auth.getCurrentUser();
     }
 
+    /**
+     * Observe Firebase auth state. The sign-in screen uses this instead of a one-shot check so a
+     * successful sign-in is caught even when the system recreated the activity behind the Google
+     * account chooser and the per-call completion callback was delivered to a now-dead activity.
+     */
+    public void addAuthStateListener(@NonNull FirebaseAuth.AuthStateListener listener) {
+        auth.addAuthStateListener(listener);
+    }
+
+    public void removeAuthStateListener(@NonNull FirebaseAuth.AuthStateListener listener) {
+        auth.removeAuthStateListener(listener);
+    }
+
     /** Launches the Google sign-in UI and, on success, signs the user into Firebase. */
     public void signIn(@NonNull Activity activity, @NonNull SignInCallback callback) {
         String serverClientId = activity.getString(R.string.default_web_client_id);
@@ -107,8 +120,11 @@ public class GoogleAuthManager {
     private void firebaseSignIn(@NonNull Activity activity, String idToken,
                                 @NonNull SignInCallback callback) {
         AuthCredential firebaseCredential = GoogleAuthProvider.getCredential(idToken, null);
+        // Not activity-scoped on purpose: if the sign-in screen was recreated behind the account
+        // chooser, an activity-bound listener would be dropped and the sign-in would silently hang.
+        // The auth-state listener is the real success signal; this just surfaces a failure toast.
         auth.signInWithCredential(firebaseCredential)
-                .addOnCompleteListener(activity, task -> {
+                .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         callback.onSuccess(auth.getCurrentUser());
                     } else {
