@@ -31,13 +31,14 @@ import com.karson.todoapp.data.TaskRepository;
 import com.karson.todoapp.logic.Categories;
 import com.karson.todoapp.logic.Dates;
 import com.karson.todoapp.logic.ProjectLogic;
-import com.karson.todoapp.logic.RepeatRules;
+import com.karson.todoapp.logic.TaskActions;
 import com.karson.todoapp.model.Item;
 import com.karson.todoapp.model.Project;
 import com.karson.todoapp.ui.AddItemSheet;
 import com.karson.todoapp.ui.RepeatEditorSheet;
 import com.karson.todoapp.ui.Row;
 import com.karson.todoapp.ui.TaskAdapter;
+import com.karson.todoapp.widget.TodayWidgetProvider;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -261,6 +262,9 @@ public class MainActivity extends AppCompatActivity
 
         updateTabCounts(now, projectIds);
         updateDayHeading(items, now);
+
+        // Keep the home-screen Today widget in step with any change rendered here.
+        TodayWidgetProvider.notifyDataChanged(this);
     }
 
     /** Ascending by datetime; completed sinks to the bottom. Completed tab is descending. */
@@ -393,115 +397,9 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onToggle(Item item) {
-        String today = Dates.todayIso();
-
-        // Undo an accidental repeat completion the same day.
-        if (item.completed && item.undo != null && today.equals(item.completedOn) && undoRepeatCompletion(item)) {
-            persistTasksAndRender();
-            return;
-        }
-
-        if (item.repeatRule != null && !item.isVirtual && !item.completed) {
-            completeRepeating(item, today);
-            persistTasksAndRender();
-            return;
-        }
-
-        if (item.completed) {
-            item.completed = false;
-            item.completedOn = null;
-            item.dismissed = false;
-            item.undo = null;
-        } else {
-            item.completed = true;
-            item.completedOn = today;
-            item.dismissed = false;
-        }
+        // Shared with the home-screen Today widget so completing behaves identically in both.
+        TaskActions.toggle(tasks, item.id, Dates.todayIso());
         persistTasksAndRender();
-    }
-
-    /** Complete the current occurrence of a repeating task: log it, then advance (or end) the template. */
-    private void completeRepeating(Item task, String today) {
-        String currentIso = task.isEvent() ? task.startDate : task.dueDate;
-
-        Item occ = new Item();
-        occ.id = createId();
-        occ.type = task.type;
-        occ.text = task.text;
-        occ.completed = true;
-        occ.completedOn = today;
-        occ.dismissed = false;
-        occ.repeatRule = null;
-        occ.isVirtual = false;
-        if (task.projectId != null) { occ.projectId = task.projectId; occ.inDateTabs = task.inDateTabs; }
-
-        Item.Undo undo = new Item.Undo();
-        undo.templateId = task.id;
-        if (task.isEvent()) {
-            occ.startDate = currentIso;
-            occ.startTime = task.startTime;
-            occ.endTime = task.endTime;
-            undo.startDate = task.startDate;
-            undo.startTime = task.startTime;
-            undo.endTime = task.endTime;
-        } else {
-            occ.dueDate = currentIso;
-            occ.dueTime = task.dueTime;
-            occ.noDue = task.noDue;
-            occ.section = task.section;
-            undo.dueDate = task.dueDate;
-            undo.dueTime = task.dueTime;
-        }
-        occ.undo = undo;
-
-        String next = RepeatRules.nextOccurrenceDate(task);
-        if (next != null) {
-            if (task.isEvent()) task.startDate = next;
-            else task.dueDate = next;
-            tasks.add(occ);
-        } else {
-            // Last occurrence: the task itself completes and drops its rule.
-            Item.Undo lastUndo = new Item.Undo();
-            lastUndo.templateId = task.id;
-            lastUndo.repeatRule = task.repeatRule;
-            task.completed = true;
-            task.completedOn = today;
-            task.dismissed = false;
-            task.repeatRule = null;
-            task.undo = lastUndo;
-        }
-    }
-
-    private boolean undoRepeatCompletion(Item occurrence) {
-        Item.Undo undo = occurrence.undo;
-        if (undo == null) return false;
-
-        if (undo.templateId != null && undo.templateId.equals(occurrence.id)) {
-            // Last occurrence: the item itself was completed and lost its rule.
-            occurrence.completed = false;
-            occurrence.completedOn = null;
-            occurrence.dismissed = false;
-            applyUndoFields(occurrence, undo);
-            occurrence.undo = null;
-            return true;
-        }
-
-        Item template = null;
-        for (Item t : tasks) if (t.id.equals(undo.templateId)) { template = t; break; }
-        if (template == null) return false;
-
-        tasks.remove(occurrence);
-        applyUndoFields(template, undo);
-        return true;
-    }
-
-    private void applyUndoFields(Item target, Item.Undo u) {
-        if (u.dueDate != null) target.dueDate = u.dueDate;
-        if (u.dueTime != null) target.dueTime = u.dueTime;
-        if (u.startDate != null) target.startDate = u.startDate;
-        if (u.startTime != null) target.startTime = u.startTime;
-        if (u.endTime != null) target.endTime = u.endTime;
-        if (u.repeatRule != null) target.repeatRule = u.repeatRule;
     }
 
     private void expireStoppedRepeats() {
@@ -791,7 +689,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private static String createId() {
-        return System.currentTimeMillis() + "-" + Integer.toHexString((int) (Math.random() * 0xffffff));
+        return TaskActions.createId();
     }
 
     private void persistTasksAndRender() {

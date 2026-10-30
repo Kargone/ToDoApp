@@ -47,6 +47,13 @@ public class LocalTaskRepository implements TaskRepository {
     }
 
     @Override
+    public void appendTask(Item task) {
+        List<Item> tasks = loadTasks();
+        tasks.add(task);
+        write(tasksFile, tasks);
+    }
+
+    @Override
     public List<Project> loadProjects() {
         Type listType = new TypeToken<ArrayList<Project>>() {}.getType();
         return read(projectsFile, listType);

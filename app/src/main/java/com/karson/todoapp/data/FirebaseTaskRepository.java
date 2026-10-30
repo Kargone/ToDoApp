@@ -86,23 +86,7 @@ public class FirebaseTaskRepository implements TaskRepository {
         tasksSub = tasksRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                taskCache.clear();
-                syncedTasks.clear();
-                for (DataSnapshot child : snapshot.getChildren()) {
-                    Map<String, Object> fields = asMap(child.getValue());
-                    if (fields == null) continue;
-                    String id = resolveId(child.getKey(), fields);
-                    try {
-                        Item item = gson.fromJson(gson.toJson(child.getValue()), Item.class);
-                        if (item == null) continue;
-                        item.id = id;
-                        taskCache.add(item);
-                        syncedTasks.put(id, SyncLogic.toStored(fields));
-                    } catch (Exception e) {
-                        Log.w(TAG, "Skipping unparseable task at " + child.getKey(), e);
-                    }
-                }
-                tasksLoaded = true;
+                applyTasksSnapshot(snapshot);
                 Log.d(TAG, "Loaded " + taskCache.size() + " tasks from Firebase");
                 if (listener != null) listener.onTasksChanged(new ArrayList<>(taskCache));
             }
@@ -115,23 +99,7 @@ public class FirebaseTaskRepository implements TaskRepository {
         projectsSub = projectsRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                projectCache.clear();
-                syncedProjects.clear();
-                for (DataSnapshot child : snapshot.getChildren()) {
-                    Map<String, Object> fields = asMap(child.getValue());
-                    if (fields == null) continue;
-                    String id = resolveId(child.getKey(), fields);
-                    try {
-                        Project p = gson.fromJson(gson.toJson(child.getValue()), Project.class);
-                        // Firebase drops null fields, so rebuild the shape; skip ill-formed rows.
-                        if (p == null || p.name == null) continue;
-                        projectCache.add(new Project(id, p.name, p.parentId));
-                        syncedProjects.put(id, SyncLogic.toStored(fields));
-                    } catch (Exception e) {
-                        Log.w(TAG, "Skipping unparseable project at " + child.getKey(), e);
-                    }
-                }
-                projectsLoaded = true;
+                applyProjectsSnapshot(snapshot);
                 if (listener != null) listener.onProjectsChanged(new ArrayList<>(projectCache));
             }
 
@@ -140,6 +108,82 @@ public class FirebaseTaskRepository implements TaskRepository {
                 Log.w(TAG, "projects listener cancelled: " + error.getMessage());
             }
         });
+    }
+
+    /**
+     * One-shot read for the widget. Reads both collections once (not a live listener), parsing them
+     * through the same path as {@link #start} so the write baseline is seeded — a following
+     * {@link #saveTasks} on this instance then writes only what the widget changed.
+     */
+    @Override
+    public void loadOnce(SnapshotCallback callback) {
+        tasksRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot taskSnap) {
+                applyTasksSnapshot(taskSnap);
+                projectsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot projectSnap) {
+                        applyProjectsSnapshot(projectSnap);
+                        callback.onLoaded(new ArrayList<>(taskCache), new ArrayList<>(projectCache));
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Log.w(TAG, "loadOnce projects cancelled: " + error.getMessage());
+                        callback.onLoaded(new ArrayList<>(taskCache), new ArrayList<>());
+                    }
+                });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.w(TAG, "loadOnce tasks cancelled: " + error.getMessage());
+                callback.onLoaded(new ArrayList<>(), new ArrayList<>());
+            }
+        });
+    }
+
+    /** Parse a tasks snapshot into {@link #taskCache} and reset the {@link #syncedTasks} baseline. */
+    private void applyTasksSnapshot(DataSnapshot snapshot) {
+        taskCache.clear();
+        syncedTasks.clear();
+        for (DataSnapshot child : snapshot.getChildren()) {
+            Map<String, Object> fields = asMap(child.getValue());
+            if (fields == null) continue;
+            String id = resolveId(child.getKey(), fields);
+            try {
+                Item item = gson.fromJson(gson.toJson(child.getValue()), Item.class);
+                if (item == null) continue;
+                item.id = id;
+                taskCache.add(item);
+                syncedTasks.put(id, SyncLogic.toStored(fields));
+            } catch (Exception e) {
+                Log.w(TAG, "Skipping unparseable task at " + child.getKey(), e);
+            }
+        }
+        tasksLoaded = true;
+    }
+
+    /** Parse a projects snapshot into {@link #projectCache} and reset the baseline. */
+    private void applyProjectsSnapshot(DataSnapshot snapshot) {
+        projectCache.clear();
+        syncedProjects.clear();
+        for (DataSnapshot child : snapshot.getChildren()) {
+            Map<String, Object> fields = asMap(child.getValue());
+            if (fields == null) continue;
+            String id = resolveId(child.getKey(), fields);
+            try {
+                Project p = gson.fromJson(gson.toJson(child.getValue()), Project.class);
+                // Firebase drops null fields, so rebuild the shape; skip ill-formed rows.
+                if (p == null || p.name == null) continue;
+                projectCache.add(new Project(id, p.name, p.parentId));
+                syncedProjects.put(id, SyncLogic.toStored(fields));
+            } catch (Exception e) {
+                Log.w(TAG, "Skipping unparseable project at " + child.getKey(), e);
+            }
+        }
+        projectsLoaded = true;
     }
 
     @Override
@@ -168,6 +212,21 @@ public class FirebaseTaskRepository implements TaskRepository {
             return;
         }
         writeChanges(tasksRef, syncedTasks, tasks);
+    }
+
+    /**
+     * Appends one task by writing just its own key — no diff, no baseline, no deletes. Safe to call
+     * from a short-lived process (the quick-add widget) that never attached the live listener:
+     * {@link DatabaseReference#setValue} on a single child only ever adds that record, and offline
+     * persistence queues it if there's no connection. Mirrors the web app's single-key append.
+     */
+    @Override
+    public void appendTask(Item task) {
+        Map<String, Object> fields = asMap(task);
+        if (fields == null) return;
+        Object rawId = fields.get("id");
+        if (!(rawId instanceof String) || !SyncLogic.isValidKey((String) rawId)) return;
+        tasksRef.child((String) rawId).setValue(SyncLogic.toStored(fields));
     }
 
     @Override

@@ -20,9 +20,32 @@ public interface TaskRepository {
 
     void saveTasks(List<Item> tasks);
 
+    /**
+     * Add a single task, appending it without rewriting the rest. This exists for short-lived
+     * callers (the quick-add widget) that never load the full list: the Firebase implementation
+     * writes just this one record's key, so it is safe even before any snapshot has arrived —
+     * unlike {@link #saveTasks}, which is guarded until the live load establishes its diff baseline.
+     */
+    void appendTask(Item task);
+
     List<Project> loadProjects();
 
     void saveProjects(List<Project> projects);
+
+    /**
+     * Read tasks and projects once, off the live listener. Used by the home-screen widget, which
+     * runs in a short-lived process and never attaches {@link #setListener}. Local storage answers
+     * synchronously on the calling thread; a live backend reads a single snapshot and, crucially,
+     * records it as the write baseline so a following {@link #saveTasks} on the same instance writes
+     * only the diff (otherwise it would be guarded off, like a cold {@link #start()}).
+     */
+    default void loadOnce(SnapshotCallback callback) {
+        callback.onLoaded(loadTasks(), loadProjects());
+    }
+
+    interface SnapshotCallback {
+        void onLoaded(List<Item> tasks, List<Project> projects);
+    }
 
     /** Register the sink for live updates. Local storage never calls back. */
     default void setListener(Listener listener) {}

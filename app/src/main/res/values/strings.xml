@@ -53,6 +53,12 @@
     <string name="cancel">Cancel</string>
     <string name="add">Add</string>
     <string name="save">Save</string>
+    <string name="task_added">Task added</string>
+
+    <!-- Widgets -->
+    <string name="widget_quick_add_label">Add task</string>
+    <string name="widget_quick_add_description">Add a task to ToDo in one tap.</string>
+    <string name="widget_today_description">See today\'s tasks and check them off.</string>
 
     <string name="delete_item_confirm">Delete this item? This cannot be undone.</string>
     <string name="delete">Delete</string>
