@@ -84,6 +84,17 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <!-- Alarm indicator -->
+    <ImageView
+        android:id="@+id/row_alarm"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/ic_alarm"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        android:tint="@color/muted" />
+
     <!-- Time column -->
     <TextView
         android:id="@+id/row_time"

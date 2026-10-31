@@ -318,6 +318,44 @@
             <include layout="@layout/view_repeat_controls" />
         </LinearLayout>
 
+        <!-- Alarm -->
+        <LinearLayout
+            android:id="@+id/alarm_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/alarm_label"
+                android:textColor="@color/fg"
+                android:textSize="14sp" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/alarm_switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/alarm_controls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView style="@style/FieldLabel" android:text="@string/alarm_time_label" />
+
+            <TextView
+                android:id="@+id/alarm_time_value"
+                style="@style/FieldValue" />
+        </LinearLayout>
+
         <!-- Footer -->
         <LinearLayout
             android:layout_width="match_parent"

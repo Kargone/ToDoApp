@@ -34,6 +34,13 @@ public class Item {
     /** Epoch millis before which a "Later today" postpone keeps the task out of Today. */
     public Long minShowTime;
 
+    /**
+     * Optional alarm time "HH:mm". When set, a ringing alarm fires at this time on the item's date
+     * ({@link #itemDate()}). Additive and web-safe: null when off so it prunes away on both sides;
+     * the web app preserves the field untouched. Only declared here, so Gson round-trips it cleanly.
+     */
+    public String alarmTime;
+
     /** Snapshot that lets a repeat completion be undone the same day. */
     public Undo undo;
 
@@ -68,6 +75,7 @@ public class Item {
         c.repeatRule = repeatRule;
         c.isVirtual = isVirtual;
         c.minShowTime = minShowTime;
+        c.alarmTime = alarmTime;
         c.undo = undo;
         return c;
     }

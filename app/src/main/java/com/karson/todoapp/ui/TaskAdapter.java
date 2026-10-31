@@ -101,7 +101,8 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return "T|" + activeTab + "|" + r.depth + "|" + editing + "|" + i.completed + "|" + i.dismissed
                 + "|" + i.isVirtual + "|" + i.type + "|" + i.text + "|" + i.dueDate + "|" + i.dueTime
                 + "|" + i.startDate + "|" + i.startTime + "|" + i.endTime
-                + "|" + i.projectId + "|" + i.minShowTime + "|" + (i.repeatRule != null);
+                + "|" + i.projectId + "|" + i.minShowTime + "|" + (i.repeatRule != null)
+                + "|" + i.alarmTime;
     }
 
     @Override
@@ -286,6 +287,9 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
         h.time.setText(ViewLogic.formatTimeCell(cellItem, now));
 
+        boolean hasAlarm = !item.completed && item.alarmTime != null && !item.alarmTime.isEmpty();
+        h.alarm.setVisibility(hasAlarm ? View.VISIBLE : View.GONE);
+
         ViewLogic.TimeState state = ViewLogic.timeState(item, now);
         switch (state) {
             case LATE:
@@ -381,6 +385,7 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         final EditText titleEdit;
         final TextView meta;
         final TextView time;
+        final ImageView alarm;
         final ImageButton menu;
 
         RowHolder(@NonNull View v) {
@@ -393,6 +398,7 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             titleEdit = v.findViewById(R.id.row_title_edit);
             meta = v.findViewById(R.id.row_meta);
             time = v.findViewById(R.id.row_time);
+            alarm = v.findViewById(R.id.row_alarm);
             menu = v.findViewById(R.id.row_menu);
         }
     }

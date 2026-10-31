@@ -55,6 +55,19 @@
     <string name="save">Save</string>
     <string name="task_added">Task added</string>
 
+    <!-- Alarms -->
+    <string name="alarm_default_title">Task reminder</string>
+    <string name="alarm_notification_title">Task alarm</string>
+    <string name="alarm_channel_name">Task alarms</string>
+    <string name="alarm_channel_desc">Ringing alarms for tasks with an alarm time set</string>
+    <string name="alarm_dismiss">Dismiss</string>
+    <string name="alarm_snooze">Snooze 5 min</string>
+    <string name="alarm_label">Alarm</string>
+    <string name="alarm_time_label">Alarm time</string>
+    <string name="set_alarm">Set alarm</string>
+    <string name="change_alarm">Change alarm</string>
+    <string name="remove_alarm">Remove alarm</string>
+
     <!-- Widgets -->
     <string name="widget_quick_add_label">Add task</string>
     <string name="widget_quick_add_description">Add a task to ToDo in one tap.</string>

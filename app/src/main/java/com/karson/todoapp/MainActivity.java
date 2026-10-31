@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.karson.todoapp.alarm.AlarmScheduler;
 import com.karson.todoapp.auth.GoogleAuthManager;
 import com.karson.todoapp.data.FirebaseTaskRepository;
 import com.karson.todoapp.data.LocalTaskRepository;
@@ -99,6 +100,8 @@ public class MainActivity extends AppCompatActivity
         authManager = new GoogleAuthManager();
         repository = createRepository();
         repository.setListener(repoListener);
+
+        requestNotificationPermissionIfNeeded();
 
         View root = findViewById(R.id.root);
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
@@ -265,6 +268,8 @@ public class MainActivity extends AppCompatActivity
 
         // Keep the home-screen Today widget in step with any change rendered here.
         TodayWidgetProvider.notifyDataChanged(this);
+        // Re-arm task alarms from the current list (idempotent; cancels ones no longer due).
+        AlarmScheduler.rescheduleAll(this, tasks);
     }
 
     /** Ascending by datetime; completed sinks to the bottom. Completed tab is descending. */
@@ -466,6 +471,21 @@ public class MainActivity extends AppCompatActivity
             popup.getMenu().add("In 3 days  +3d").setOnMenuItemClickListener(mi -> { postponeTask(item, 3); return true; });
         }
 
+        // Alarm actions (dated, non-virtual tasks can ring at a time on their day).
+        if (!item.isVirtual && item.hasDate()) {
+            boolean hasAlarm = item.alarmTime != null && !item.alarmTime.isEmpty();
+            String label = hasAlarm ? getString(R.string.change_alarm) + "  " + item.alarmTime
+                    : getString(R.string.set_alarm);
+            popup.getMenu().add(label).setOnMenuItemClickListener(mi -> { openAlarmPicker(item); return true; });
+            if (hasAlarm) {
+                popup.getMenu().add(R.string.remove_alarm).setOnMenuItemClickListener(mi -> {
+                    item.alarmTime = null;
+                    persistTasksAndRender();
+                    return true;
+                });
+            }
+        }
+
         // Project actions (match getTaskProjectMenuItems).
         if (!projects.isEmpty()) {
             boolean inProject = item.projectId != null && getProjectIds().contains(item.projectId);
@@ -506,6 +526,17 @@ public class MainActivity extends AppCompatActivity
             });
         }
         picker.show();
+    }
+
+    /** Pick an alarm time for a task; it will ring at that time on the task's day. */
+    private void openAlarmPicker(Item item) {
+        String initial = item.alarmTime != null && !item.alarmTime.isEmpty() ? item.alarmTime
+                : (item.itemTime() != null && !item.itemTime().isEmpty() ? item.itemTime() : "09:00");
+        LocalTime base = LocalTime.parse(initial);
+        new android.app.TimePickerDialog(this, (view, hour, minute) -> {
+            item.alarmTime = String.format(Locale.US, "%02d:%02d", hour, minute);
+            persistTasksAndRender();
+        }, base.getHour(), base.getMinute(), true).show();
     }
 
     /** Postpone a dated task: less than a day hides it from Today; whole days shift its date. */
@@ -692,6 +723,15 @@ public class MainActivity extends AppCompatActivity
         return TaskActions.createId();
     }
 
+    /** Ask for notification permission (Android 13+) so alarm full-screen notifications can post. */
+    private void requestNotificationPermissionIfNeeded() {
+        if (android.os.Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1001);
+        }
+    }
+
     private void persistTasksAndRender() {
         repository.saveTasks(tasks);
         render();
@@ -858,7 +898,7 @@ public class MainActivity extends AppCompatActivity
 
     // ---------- Theme ----------
 
-    static void applyStoredTheme(Context context) {
+    public static void applyStoredTheme(Context context) {
         String theme = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(THEME_KEY, null);
         if ("dark".equals(theme)) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);

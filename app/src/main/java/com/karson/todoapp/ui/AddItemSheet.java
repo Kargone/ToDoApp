@@ -50,11 +50,13 @@ public class AddItemSheet extends BottomSheetDialogFragment {
     private String type = "task";
     private String dueDate = "", dueTime = "";
     private String startDate = "", startTime = "", endTime = "";
+    private String alarmTime = "";
 
     private TextView typeTask, typeEvent;
     private View taskFields, eventFields, taskSectionField, projectRow, dateTabsSwitch;
-    private TextView dueDateView, dueTimeView, startDateView, startTimeView, endTimeView;
-    private SwitchMaterial noDue, inDateTabs, repeatSwitch;
+    private View alarmRow, alarmControls;
+    private TextView dueDateView, dueTimeView, startDateView, startTimeView, endTimeView, alarmTimeView;
+    private SwitchMaterial noDue, inDateTabs, repeatSwitch, alarmSwitch;
     private Spinner sectionSpinner, projectSpinner;
     private View repeatControlsView;
     private RepeatControls repeatControls;
@@ -105,6 +107,10 @@ public class AddItemSheet extends BottomSheetDialogFragment {
         repeatSwitch = v.findViewById(R.id.repeat_task);
         repeatControlsView = v.findViewById(R.id.repeat_controls);
         repeatControls = new RepeatControls(repeatControlsView);
+        alarmRow = v.findViewById(R.id.alarm_row);
+        alarmControls = v.findViewById(R.id.alarm_controls);
+        alarmSwitch = v.findViewById(R.id.alarm_switch);
+        alarmTimeView = v.findViewById(R.id.alarm_time_value);
 
         sectionSpinner.setAdapter(new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_spinner_dropdown_item, new String[]{"Today", "Later"}));
@@ -124,9 +130,14 @@ public class AddItemSheet extends BottomSheetDialogFragment {
         }));
         endTimeView.setOnClickListener(x -> pickTime(endTime, iso -> { endTime = iso; renderTime(endTimeView, iso); }));
 
-        noDue.setOnCheckedChangeListener((btn, checked) -> { updateNoDue(checked); updateDateTabsSwitch(); });
+        noDue.setOnCheckedChangeListener((btn, checked) -> { updateNoDue(checked); updateDateTabsSwitch(); updateAlarmRow(); });
         repeatSwitch.setOnCheckedChangeListener((btn, checked) ->
                 repeatControlsView.setVisibility(checked ? View.VISIBLE : View.GONE));
+        alarmSwitch.setOnCheckedChangeListener((btn, checked) -> {
+            alarmControls.setVisibility(checked ? View.VISIBLE : View.GONE);
+            if (checked && alarmTime.isEmpty()) { alarmTime = "09:00"; renderTime(alarmTimeView, alarmTime); }
+        });
+        alarmTimeView.setOnClickListener(x -> pickTime(alarmTime, iso -> { alarmTime = iso; renderTime(alarmTimeView, iso); }));
         projectSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> p, View vw, int pos, long id) { updateDateTabsSwitch(); }
             @Override public void onNothingSelected(AdapterView<?> p) {}
@@ -141,6 +152,7 @@ public class AddItemSheet extends BottomSheetDialogFragment {
         renderDate(startDateView, startDate);
         renderTime(startTimeView, startTime);
         renderTime(endTimeView, endTime);
+        renderTime(alarmTimeView, alarmTime);
 
         // A project's "Add task" preselects it and starts undated.
         String preselect = getArguments() != null ? getArguments().getString(ARG_PROJECT_ID) : null;
@@ -178,6 +190,15 @@ public class AddItemSheet extends BottomSheetDialogFragment {
         eventFields.setVisibility(event ? View.VISIBLE : View.GONE);
         if (repeatControls != null) repeatControls.setAllowRevealTime(!event);
         updateDateTabsSwitch();
+        updateAlarmRow();
+    }
+
+    /** The alarm only makes sense when the item has a day to ring on (dated task or any event). */
+    private void updateAlarmRow() {
+        if (alarmRow == null) return;
+        boolean dated = "event".equals(type) || !noDue.isChecked();
+        alarmRow.setVisibility(dated ? View.VISIBLE : View.GONE);
+        alarmControls.setVisibility(dated && alarmSwitch.isChecked() ? View.VISIBLE : View.GONE);
     }
 
     private void updateNoDue(boolean checked) {
@@ -248,6 +269,11 @@ public class AddItemSheet extends BottomSheetDialogFragment {
         if (projectId != null) {
             item.projectId = projectId;
             item.inDateTabs = inDateTabs.isChecked();
+        }
+
+        boolean dated = "event".equals(type) || !noDue.isChecked();
+        if (dated && alarmSwitch.isChecked() && !alarmTime.isEmpty()) {
+            item.alarmTime = alarmTime;
         }
 
         if (host != null) host.onAddItem(item);
