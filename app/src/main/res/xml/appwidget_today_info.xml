@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Today list widget: scrollable, resizable. Collection widgets need updatePeriodMillis=0 and are
-     refreshed explicitly (on toggle, and whenever the app re-renders its list). -->
+<!-- Today list widget: scrollable, resizable. Refreshed explicitly on toggle and whenever the app
+     re-renders; updatePeriodMillis gives a periodic safety refresh (clamped by the OS to ~30 min)
+     so it doesn't drift stale, and ACTION_DATE_CHANGED (manifest) handles the midnight rollover. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="180dp"
     android:minHeight="110dp"
@@ -15,4 +16,4 @@
     android:description="@string/widget_today_description"
     android:initialLayout="@layout/widget_today"
     android:previewLayout="@layout/widget_today"
-    android:updatePeriodMillis="0" />
+    android:updatePeriodMillis="1800000" />

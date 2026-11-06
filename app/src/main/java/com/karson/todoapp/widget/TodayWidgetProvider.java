@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.widget.RemoteViews;
 
+import com.karson.todoapp.MainActivity;
 import com.karson.todoapp.R;
 import com.karson.todoapp.data.TaskRepositories;
 import com.karson.todoapp.data.TaskRepository;
@@ -34,7 +35,7 @@ public class TodayWidgetProvider extends AppWidgetProvider {
         manager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.widget_list);
     }
 
-    private RemoteViews buildViews(Context context, int appWidgetId) {
+    private static RemoteViews buildViews(Context context, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_today);
 
         // List adapter backed by the service.
@@ -43,6 +44,13 @@ public class TodayWidgetProvider extends AppWidgetProvider {
         serviceIntent.setData(Uri.parse(serviceIntent.toUri(Intent.URI_INTENT_SCHEME)));
         views.setRemoteAdapter(R.id.widget_list, serviceIntent);
         views.setEmptyView(R.id.widget_list, R.id.widget_empty);
+
+        // Tapping the header opens the app (like the Calendar widget's date header).
+        Intent openApp = new Intent(context, MainActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        views.setOnClickPendingIntent(R.id.widget_title, PendingIntent.getActivity(
+                context, 1, openApp,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
 
         // Quick-add button opens the input dialog.
         Intent addIntent = new Intent(context, QuickAddActivity.class);
@@ -64,10 +72,16 @@ public class TodayWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        super.onReceive(context, intent);
-        if (ACTION_TOGGLE.equals(intent.getAction())) {
+        super.onReceive(context, intent); // handles APPWIDGET_UPDATE -> onUpdate
+        String action = intent.getAction();
+        if (ACTION_TOGGLE.equals(action)) {
             String taskId = intent.getStringExtra(EXTRA_TASK_ID);
             if (taskId != null) toggleTask(context, taskId);
+        } else if (Intent.ACTION_DATE_CHANGED.equals(action)
+                || Intent.ACTION_TIME_CHANGED.equals(action)
+                || Intent.ACTION_TIMEZONE_CHANGED.equals(action)) {
+            // The day rolled over (or the clock changed) — "Today" is now a different set.
+            refreshAll(context);
         }
     }
 
@@ -84,10 +98,18 @@ public class TodayWidgetProvider extends AppWidgetProvider {
         });
     }
 
-    /** Refresh the list of every placed Today widget (called after a toggle, and by the app on change). */
+    /** Reload the list data of every placed Today widget (after a toggle, and by the app on change). */
     public static void notifyDataChanged(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         int[] ids = manager.getAppWidgetIds(new ComponentName(context, TodayWidgetProvider.class));
+        if (ids.length > 0) manager.notifyAppWidgetViewDataChanged(ids, R.id.widget_list);
+    }
+
+    /** Rebuild the views and reload the data of every placed Today widget (periodic / day rollover). */
+    static void refreshAll(Context context) {
+        AppWidgetManager manager = AppWidgetManager.getInstance(context);
+        int[] ids = manager.getAppWidgetIds(new ComponentName(context, TodayWidgetProvider.class));
+        for (int id : ids) manager.updateAppWidget(id, buildViews(context, id));
         if (ids.length > 0) manager.notifyAppWidgetViewDataChanged(ids, R.id.widget_list);
     }
 }
