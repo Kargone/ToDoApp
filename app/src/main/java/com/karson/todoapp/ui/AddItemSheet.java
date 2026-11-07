@@ -23,6 +23,7 @@ import com.karson.todoapp.R;
 import com.karson.todoapp.logic.Dates;
 import com.karson.todoapp.logic.ProjectLogic;
 import com.karson.todoapp.logic.RepeatRules;
+import com.karson.todoapp.logic.ViewLogic;
 import com.karson.todoapp.model.Item;
 import com.karson.todoapp.model.Project;
 import com.karson.todoapp.model.RepeatRule;
@@ -299,7 +300,7 @@ public class AddItemSheet extends BottomSheetDialogFragment {
         LocalTime base = currentIso.isEmpty() ? LocalTime.of(9, 0) : LocalTime.parse(currentIso);
         new TimePickerDialog(requireContext(),
                 (view, hour, minute) -> cb.run(String.format(Locale.US, "%02d:%02d", hour, minute)),
-                base.getHour(), base.getMinute(), true).show();
+                base.getHour(), base.getMinute(), false).show();
     }
 
     private void renderDate(TextView view, String iso) {
@@ -317,7 +318,7 @@ public class AddItemSheet extends BottomSheetDialogFragment {
             view.setText(R.string.pick_time);
             view.setTextColor(ContextCompat.getColor(requireContext(), R.color.muted));
         } else {
-            view.setText(iso);
+            view.setText(ViewLogic.formatClock(iso));
             view.setTextColor(ContextCompat.getColor(requireContext(), R.color.fg));
         }
     }

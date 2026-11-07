@@ -20,6 +20,15 @@ public final class ViewLogic {
     private static final DateTimeFormatter MONTH_DAY =
             DateTimeFormatter.ofPattern("MMM d", Locale.US);
 
+    private static final DateTimeFormatter CLOCK_12H =
+            DateTimeFormatter.ofPattern("h:mm a", Locale.US);
+
+    /** A stored "HH:mm" time formatted for display with AM/PM, e.g. "9:00 AM". Mirrors the web's formatTime. */
+    public static String formatClock(String hhmm) {
+        if (hhmm == null || hhmm.isEmpty()) return "";
+        return LocalTime.parse(hhmm).format(CLOCK_12H);
+    }
+
     public static boolean isOverdue(Item item, LocalDateTime now) {
         if (item.completed || item.isVirtual || item.noDue) return false;
         String dateIso = item.itemDate();

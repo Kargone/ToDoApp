@@ -84,16 +84,25 @@
             android:visibility="gone" />
     </LinearLayout>
 
-    <!-- Alarm indicator -->
+    <!-- Alarm indicator: bell + the time it rings -->
     <ImageView
         android:id="@+id/row_alarm"
-        android:layout_width="14dp"
-        android:layout_height="14dp"
+        android:layout_width="13dp"
+        android:layout_height="13dp"
         android:layout_marginStart="6dp"
         android:src="@drawable/ic_alarm"
         android:importantForAccessibility="no"
         android:visibility="gone"
         android:tint="@color/muted" />
+
+    <TextView
+        android:id="@+id/row_alarm_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="3dp"
+        android:textColor="@color/muted"
+        android:textSize="11sp"
+        android:visibility="gone" />
 
     <!-- Time column -->
     <TextView

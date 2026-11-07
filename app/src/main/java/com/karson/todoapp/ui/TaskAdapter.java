@@ -289,6 +289,8 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         boolean hasAlarm = !item.completed && item.alarmTime != null && !item.alarmTime.isEmpty();
         h.alarm.setVisibility(hasAlarm ? View.VISIBLE : View.GONE);
+        h.alarmTime.setVisibility(hasAlarm ? View.VISIBLE : View.GONE);
+        if (hasAlarm) h.alarmTime.setText(ViewLogic.formatClock(item.alarmTime));
 
         ViewLogic.TimeState state = ViewLogic.timeState(item, now);
         switch (state) {
@@ -386,6 +388,7 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         final TextView meta;
         final TextView time;
         final ImageView alarm;
+        final TextView alarmTime;
         final ImageButton menu;
 
         RowHolder(@NonNull View v) {
@@ -399,6 +402,7 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             meta = v.findViewById(R.id.row_meta);
             time = v.findViewById(R.id.row_time);
             alarm = v.findViewById(R.id.row_alarm);
+            alarmTime = v.findViewById(R.id.row_alarm_time);
             menu = v.findViewById(R.id.row_menu);
         }
     }

@@ -33,6 +33,7 @@ import com.karson.todoapp.logic.Categories;
 import com.karson.todoapp.logic.Dates;
 import com.karson.todoapp.logic.ProjectLogic;
 import com.karson.todoapp.logic.TaskActions;
+import com.karson.todoapp.logic.ViewLogic;
 import com.karson.todoapp.model.Item;
 import com.karson.todoapp.model.Project;
 import com.karson.todoapp.ui.AddItemSheet;
@@ -474,7 +475,7 @@ public class MainActivity extends AppCompatActivity
         // Alarm actions (dated, non-virtual tasks can ring at a time on their day).
         if (!item.isVirtual && item.hasDate()) {
             boolean hasAlarm = item.alarmTime != null && !item.alarmTime.isEmpty();
-            String label = hasAlarm ? getString(R.string.change_alarm) + "  " + item.alarmTime
+            String label = hasAlarm ? getString(R.string.change_alarm) + "  " + ViewLogic.formatClock(item.alarmTime)
                     : getString(R.string.set_alarm);
             popup.getMenu().add(label).setOnMenuItemClickListener(mi -> { openAlarmPicker(item); return true; });
             if (hasAlarm) {
@@ -536,7 +537,7 @@ public class MainActivity extends AppCompatActivity
         new android.app.TimePickerDialog(this, (view, hour, minute) -> {
             item.alarmTime = String.format(Locale.US, "%02d:%02d", hour, minute);
             persistTasksAndRender();
-        }, base.getHour(), base.getMinute(), true).show();
+        }, base.getHour(), base.getMinute(), false).show();
     }
 
     /** Postpone a dated task: less than a day hides it from Today; whole days shift its date. */

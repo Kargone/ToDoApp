@@ -176,7 +176,7 @@ public class RepeatControls {
     private void pickTime(String current, OnPicked cb) {
         LocalTime base = current.isEmpty() ? LocalTime.of(9, 0) : LocalTime.parse(current);
         new TimePickerDialog(context, (view, h, m) -> cb.run(String.format(Locale.US, "%02d:%02d", h, m)),
-                base.getHour(), base.getMinute(), true).show();
+                base.getHour(), base.getMinute(), false).show();
     }
 
     private void pickDate(String current, OnPicked cb) {
