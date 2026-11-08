@@ -780,10 +780,17 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onRepeatRuleSaved(String taskId, com.karson.todoapp.model.RepeatRule rule) {
+    public String alarmTimeFor(String taskId) {
+        Item t = findTask(taskId);
+        return t != null ? t.alarmTime : null;
+    }
+
+    @Override
+    public void onRepeatRuleSaved(String taskId, com.karson.todoapp.model.RepeatRule rule, String alarmTime) {
         Item t = findTask(taskId);
         if (t != null) {
             t.repeatRule = rule;
+            t.alarmTime = alarmTime != null && !alarmTime.isEmpty() ? alarmTime : null;
             persistTasksAndRender();
         }
     }
