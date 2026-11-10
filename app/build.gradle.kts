@@ -25,8 +25,8 @@ android {
         applicationId = "com.karson.todoapp"
         minSdk = 29
         targetSdk = 37
-        versionCode = 7
-        versionName = "1.2.3"
+        versionCode = 8
+        versionName = "1.2.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -75,6 +75,9 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
+
+    // Background periodic sync that re-arms alarms (e.g. ones added on the web) without opening the app.
+    implementation(libs.androidx.work.runtime)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)

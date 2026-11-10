@@ -9,6 +9,7 @@ import android.content.Intent;
 import androidx.core.content.ContextCompat;
 
 import com.karson.todoapp.R;
+import com.karson.todoapp.data.TaskRepositories;
 
 /**
  * Fires when a task alarm goes off and hands straight to {@link AlarmService}, which does the actual
@@ -30,6 +31,16 @@ public class AlarmReceiver extends BroadcastReceiver {
                 .putExtra(AlarmScheduler.EXTRA_TASK_TEXT, intent.getStringExtra(AlarmScheduler.EXTRA_TASK_TEXT))
                 .putExtra(AlarmScheduler.EXTRA_ALARM_TIME, intent.getStringExtra(AlarmScheduler.EXTRA_ALARM_TIME));
         ContextCompat.startForegroundService(context, service);
+
+        // Re-arm the task's NEXT occurrence now that this one fired, so a repeating task keeps
+        // ringing day after day even if the app is never opened. Reads the current tasks once
+        // (Firebase cache / local JSON) and reschedules the whole set.
+        final Context app = context.getApplicationContext();
+        final PendingResult pending = goAsync();
+        TaskRepositories.create(app).loadOnce((tasks, projects) -> {
+            AlarmScheduler.rescheduleAll(app, tasks);
+            pending.finish();
+        });
     }
 
     static int notifyId(String taskId) {

@@ -106,9 +106,12 @@ public class MainActivity extends AppCompatActivity
 
         View root = findViewById(R.id.root);
         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+            // Include the IME so the list resizes and scrolls the focused rename field above the
+            // keyboard (under edge-to-edge, windowSoftInputMode=adjustResize no longer does this alone).
             androidx.core.graphics.Insets bars = insets.getInsets(
                     androidx.core.view.WindowInsetsCompat.Type.systemBars()
-                            | androidx.core.view.WindowInsetsCompat.Type.displayCutout());
+                            | androidx.core.view.WindowInsetsCompat.Type.displayCutout()
+                            | androidx.core.view.WindowInsetsCompat.Type.ime());
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
             return insets;
         });

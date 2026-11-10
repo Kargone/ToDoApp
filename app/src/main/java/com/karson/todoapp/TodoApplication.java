@@ -4,6 +4,7 @@ import android.app.Application;
 import android.util.Log;
 
 import com.google.firebase.database.FirebaseDatabase;
+import com.karson.todoapp.alarm.AlarmSyncWorker;
 
 /**
  * Enables Realtime Database on-disk persistence once at process start — reads then work offline
@@ -21,6 +22,12 @@ public class TodoApplication extends Application {
         } catch (Exception e) {
             // Thrown only if the database was already touched this process — safe to ignore.
             Log.w(TAG, "setPersistenceEnabled skipped", e);
+        }
+        // Keep alarms armed for tasks added elsewhere (e.g. the web app) without opening the app.
+        try {
+            AlarmSyncWorker.schedule(this);
+        } catch (Exception e) {
+            Log.w(TAG, "alarm sync scheduling skipped", e);
         }
     }
 }
