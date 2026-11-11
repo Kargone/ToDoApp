@@ -180,16 +180,24 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
-    /** Commit (or cancel, if left empty) an inline rename and leave edit mode. */
-    private void commitRename(RowHolder h) {
-        if (editingTaskId == null) return;
-        String id = editingTaskId;
+    /**
+     * Commit (or cancel, if left empty) an inline rename of a specific task and leave edit mode.
+     * The id is the task this EditText belongs to, captured when the row was bound — NOT the shared
+     * {@link #editingTaskId}, which may already point at a different task if the user double-tapped
+     * another row to edit it before this one's focus-loss commit ran (that would write this box's
+     * text onto the other task). We only clear the global edit state / keyboard when this task is
+     * still the active one; a superseded box just writes its own text back to its own task.
+     */
+    private void commitRename(RowHolder h, String id) {
+        if (id == null) return;
         String text = h.titleEdit.getText().toString();
-        editingTaskId = null;
-        InputMethodManager imm = (InputMethodManager) h.titleEdit.getContext()
-                .getSystemService(Context.INPUT_METHOD_SERVICE);
-        if (imm != null) imm.hideSoftInputFromWindow(h.titleEdit.getWindowToken(), 0);
-        h.titleEdit.clearFocus();
+        if (id.equals(editingTaskId)) {
+            editingTaskId = null;
+            InputMethodManager imm = (InputMethodManager) h.titleEdit.getContext()
+                    .getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (imm != null) imm.hideSoftInputFromWindow(h.titleEdit.getWindowToken(), 0);
+            h.titleEdit.clearFocus();
+        }
         listener.onRenameTask(id, text);
     }
 
@@ -242,14 +250,15 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             h.title.setVisibility(View.GONE);
             h.title.setOnClickListener(null);
             h.title.setClickable(false);
+            final String editId = item.id;
             h.titleEdit.setVisibility(View.VISIBLE);
             h.titleEdit.setText(item.text);
             h.titleEdit.setSelection(h.titleEdit.getText().length());
             h.titleEdit.setOnEditorActionListener((v, actionId, e) -> {
-                if (actionId == EditorInfo.IME_ACTION_DONE) { commitRename(h); return true; }
+                if (actionId == EditorInfo.IME_ACTION_DONE) { commitRename(h, editId); return true; }
                 return false;
             });
-            h.titleEdit.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) commitRename(h); });
+            h.titleEdit.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) commitRename(h, editId); });
             h.titleEdit.post(() -> {
                 if (!item.id.equals(editingTaskId)) return;
                 if (h.titleEdit.requestFocus()) {
