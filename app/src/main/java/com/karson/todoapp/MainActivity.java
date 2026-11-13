@@ -804,6 +804,7 @@ public class MainActivity extends AppCompatActivity
         PopupMenu popup = new PopupMenu(this, anchor);
         popup.getMenu().add("Copy tasks (export)").setOnMenuItemClickListener(mi -> { exportToClipboard(); return true; });
         popup.getMenu().add("Import from clipboard").setOnMenuItemClickListener(mi -> { importFromClipboard(); return true; });
+        popup.getMenu().add("Export archive").setOnMenuItemClickListener(mi -> { exportArchiveToClipboard(); return true; });
         popup.getMenu().add(R.string.sign_out).setOnMenuItemClickListener(mi -> { signOut(); return true; });
         popup.show();
     }
@@ -823,6 +824,24 @@ public class MainActivity extends AppCompatActivity
                 (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
         cm.setPrimaryClip(android.content.ClipData.newPlainText("ToDo tasks", json));
         toast("Tasks copied to clipboard");
+    }
+
+    /** Copies the archive ({@code {"archive": [...]}}) to the clipboard. Mirrors the web's exportArchive. */
+    private void exportArchiveToClipboard() {
+        repository.loadArchive(archived -> {
+            if (archived == null || archived.isEmpty()) {
+                toast("The archive is empty.");
+                return;
+            }
+            Map<String, Object> wrapper = new HashMap<>();
+            wrapper.put("archive", archived);
+            String json = new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(wrapper);
+
+            android.content.ClipboardManager cm =
+                    (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            cm.setPrimaryClip(android.content.ClipData.newPlainText("ToDo archive", json));
+            toast(archived.size() + " archived items copied to clipboard");
+        });
     }
 
     private void importFromClipboard() {

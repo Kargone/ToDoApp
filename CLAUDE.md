@@ -46,9 +46,12 @@ Full feature parity with the web app reached (verified on the `Pixel_10a` emulat
 - Phase 2 (projects: nested tree, collapse, counts, menus, date-tab opt-in) — done.
 - Phase 3 (repeat engine: virtual occurrences, reveal time, stop date, complete-and-advance + undo) — done.
 - Phase 4 (item menus: postpone; account menu with JSON import/export) — done.
+- Firebase sync + Google sign-in (`FirebaseTaskRepository` behind `TaskRepository`,
+  `GoogleAuthManager`, `SignInActivity`), alarms, and the Today home-screen widget — done.
+- Archive (completed records aged out after `ARCHIVE_AFTER_YEARS`): pure logic in
+  `logic/SyncLogic.java` (`selectArchivable` / `buildArchiveUpdates`, unit-tested in
+  `SyncLogicArchiveTest`); the sweep runs once per foreground session in
+  `FirebaseTaskRepository`, and the account menu's "Export archive" copies it to the
+  clipboard. Mirrors the web's `archiveOldTasks` / `exportArchive`.
 
-Not yet built (the "couple other features" to come): **Firebase sync + Google sign-in**
-(intentionally deferred — slots in behind `TaskRepository` as a `FirebaseTaskRepository`;
-needs an Android app registered in Firebase console project `todoapp-js-5cbd2` for
-`google-services.json` + SHA-1). Plus any other features the user names.
 See the project memory note for the full phase plan and decisions.

@@ -4,6 +4,7 @@ import com.karson.todoapp.model.Item;
 import com.karson.todoapp.model.Project;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Storage for tasks and projects. A single seam so the backend can change without touching the
@@ -45,6 +46,20 @@ public interface TaskRepository {
 
     interface SnapshotCallback {
         void onLoaded(List<Item> tasks, List<Project> projects);
+    }
+
+    /**
+     * Read the archive branch (completed records aged out of the live list) once, for export.
+     * Each entry is a raw stored record with its key injected as {@code id}, so fields the model
+     * does not carry (such as {@code archivedOn}) survive. Backends without an archive — local
+     * storage, and anything signed out — answer empty.
+     */
+    default void loadArchive(ArchiveCallback callback) {
+        callback.onLoaded(new java.util.ArrayList<>());
+    }
+
+    interface ArchiveCallback {
+        void onLoaded(List<Map<String, Object>> archived);
     }
 
     /** Register the sink for live updates. Local storage never calls back. */

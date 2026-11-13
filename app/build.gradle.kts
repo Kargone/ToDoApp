@@ -25,8 +25,8 @@ android {
         applicationId = "com.karson.todoapp"
         minSdk = 29
         targetSdk = 37
-        versionCode = 9
-        versionName = "1.2.5"
+        versionCode = 10
+        versionName = "1.2.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

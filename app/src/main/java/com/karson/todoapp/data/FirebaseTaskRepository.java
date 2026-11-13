@@ -11,6 +11,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.karson.todoapp.logic.Dates;
 import com.karson.todoapp.logic.SyncLogic;
 import com.karson.todoapp.model.Item;
 import com.karson.todoapp.model.Project;
@@ -18,8 +19,10 @@ import com.karson.todoapp.model.Project;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Syncs tasks and projects with Firebase Realtime Database under {@code users/<uid>}, matching the
@@ -41,6 +44,7 @@ public class FirebaseTaskRepository implements TaskRepository {
     private static final String TAG = "FirebaseTaskRepository";
     private static final Type MAP_TYPE = new TypeToken<Map<String, Object>>() {}.getType();
 
+    private final DatabaseReference rootRef;
     private final DatabaseReference tasksRef;
     private final DatabaseReference projectsRef;
     private final Gson gson = new Gson();
@@ -58,10 +62,13 @@ public class FirebaseTaskRepository implements TaskRepository {
     private boolean tasksLoaded;
     private boolean projectsLoaded;
 
+    /** Guards the once-per-session archive sweep (see {@link #maybeArchiveOldTasks}). */
+    private boolean archiveChecked;
+
     public FirebaseTaskRepository(@NonNull String uid) {
-        DatabaseReference root = FirebaseDatabase.getInstance().getReference("users").child(uid);
-        this.tasksRef = root.child("tasks");
-        this.projectsRef = root.child("projects");
+        this.rootRef = FirebaseDatabase.getInstance().getReference("users").child(uid);
+        this.tasksRef = rootRef.child("tasks");
+        this.projectsRef = rootRef.child("projects");
     }
 
     @Override
@@ -87,6 +94,9 @@ public class FirebaseTaskRepository implements TaskRepository {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 applyTasksSnapshot(snapshot);
+                // Only the live (foreground) path sweeps old tasks into the archive — never loadOnce,
+                // which runs in the short-lived widget process. Trims taskCache before the UI emit.
+                maybeArchiveOldTasks();
                 Log.d(TAG, "Loaded " + taskCache.size() + " tasks from Firebase");
                 if (listener != null) listener.onTasksChanged(new ArrayList<>(taskCache));
             }
@@ -200,6 +210,7 @@ public class FirebaseTaskRepository implements TaskRepository {
         // snapshot re-establishes the baseline (a write off a stale baseline could delete real data).
         tasksLoaded = false;
         projectsLoaded = false;
+        archiveChecked = false; // re-arm the sweep for the next foreground session
         syncedTasks.clear();
         syncedProjects.clear();
     }
@@ -227,6 +238,68 @@ public class FirebaseTaskRepository implements TaskRepository {
         Object rawId = fields.get("id");
         if (!(rawId instanceof String) || !SyncLogic.isValidKey((String) rawId)) return;
         tasksRef.child((String) rawId).setValue(SyncLogic.toStored(fields));
+    }
+
+    /**
+     * Once per foreground session, move completed records finished over a year ago into the
+     * {@code archive/} branch — the Android side of the web app's {@code archiveOldTasks}. Selection
+     * is {@link SyncLogic#selectArchivable} over the just-loaded cache; the move is one atomic
+     * {@link DatabaseReference#updateChildren} ({@code archive/<id>} written, {@code tasks/<id>}
+     * deleted). The archived rows are dropped from {@link #taskCache} and the write baseline up front,
+     * so the UI emit that follows already excludes them and the echoed delete-snapshot is a no-op.
+     */
+    private void maybeArchiveOldTasks() {
+        if (archiveChecked) return;
+        archiveChecked = true;
+
+        String todayIso = Dates.todayIso();
+        List<Item> old = SyncLogic.selectArchivable(taskCache, todayIso);
+        if (old.isEmpty()) return;
+
+        List<Map<String, Object>> records = new ArrayList<>();
+        Set<String> ids = new HashSet<>();
+        for (Item item : old) {
+            Map<String, Object> fields = asMap(item);
+            if (fields == null) continue;
+            records.add(fields);
+            ids.add(item.id);
+        }
+        if (records.isEmpty()) return;
+
+        taskCache.removeIf(item -> ids.contains(item.id));
+        for (String id : ids) syncedTasks.remove(id);
+
+        Log.d(TAG, "Archiving " + ids.size() + " old task(s)");
+        rootRef.updateChildren(SyncLogic.buildArchiveUpdates(records, todayIso))
+                .addOnFailureListener(e -> Log.w(TAG, "Firebase archive failed", e));
+    }
+
+    /**
+     * Reads the {@code archive/} branch once (never live) and hands back each stored record with its
+     * key injected as {@code id}, mirroring the web app's {@code exportArchive}. Raw maps, so fields
+     * the model does not carry (such as {@code archivedOn}) survive into the export.
+     */
+    @Override
+    public void loadArchive(ArchiveCallback callback) {
+        rootRef.child("archive").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                List<Map<String, Object>> out = new ArrayList<>();
+                for (DataSnapshot child : snapshot.getChildren()) {
+                    Map<String, Object> fields = asMap(child.getValue());
+                    if (fields == null) continue;
+                    fields.put("id", child.getKey());
+                    out.add(fields);
+                }
+                callback.onLoaded(out);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.w(TAG, "loadArchive cancelled: " + error.getMessage());
+                callback.onLoaded(new ArrayList<>());
+            }
+        });
     }
 
     @Override

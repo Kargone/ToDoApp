@@ -1,5 +1,7 @@
 package com.karson.todoapp.logic;
 
+import com.karson.todoapp.model.Item;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.Map;
  * users/{uid}/
  *   tasks/{key}:    task fields (the key is the task's id)
  *   projects/{key}: { name, parentId? }
+ *   archive/{key}:  task fields + archivedOn, never loaded during normal use
  * </pre>
  *
  * <p>No Firebase or Gson dependency, so these can be reasoned about (and unit-tested) in isolation.
@@ -67,5 +70,78 @@ public final class SyncLogic {
             return map;
         }
         return new LinkedHashMap<>();
+    }
+
+    // --- Archive ----------------------------------------------------------------
+    //
+    // Completed records older than a year are moved out of the live task list into a separate
+    // {@code archive/} branch that is never loaded during normal use (see the web app's
+    // {@code archiveOldTasks}). Selection works on in-memory {@link Item}s, matching the rest of
+    // {@code logic/}; building the Firebase update works on the stored {@code Map} form, matching
+    // {@link #toStored} — the caller converts the selected items to maps (the same Gson round-trip
+    // the repository already uses) and hands them to {@link #buildArchiveUpdates}.
+
+    /** Completed records finished at least this many years ago are archived. */
+    public static final int ARCHIVE_AFTER_YEARS = 1;
+
+    /**
+     * When a completed record was finished. Mirrors the web's {@code completionDate}: prefer
+     * {@code completedOn}, else the record's own date ({@code startDate} for an event, {@code dueDate}
+     * for a task), else {@code startDate}, treating blank strings as absent. Returns {@code ""} when
+     * nothing is set.
+     */
+    public static String completionDate(Item item) {
+        String byType = item.isEvent() ? item.startDate : item.dueDate;
+        return firstNonEmpty(item.completedOn, byType, item.startDate);
+    }
+
+    /**
+     * Completed, non-virtual records finished more than {@link #ARCHIVE_AFTER_YEARS} year(s) before
+     * {@code todayIso}. Open records are never archived however old, and a generated (virtual) repeat
+     * occurrence is skipped since it is not a stored item. Mirrors the web's {@code selectArchivable}.
+     */
+    public static List<Item> selectArchivable(List<Item> items, String todayIso) {
+        String cutoff = yearsBefore(todayIso, ARCHIVE_AFTER_YEARS);
+        List<Item> out = new ArrayList<>();
+        for (Item item : items) {
+            if (item == null || !item.completed || item.isVirtual) continue;
+            String finished = completionDate(item);
+            if (!finished.isEmpty() && finished.compareTo(cutoff) < 0) out.add(item);
+        }
+        return out;
+    }
+
+    /**
+     * One atomic multi-path update that moves records into {@code archive/} (stamped with
+     * {@code archivedOn}) and deletes them from {@code tasks/} (a {@code null} value, which Firebase
+     * treats as a delete). Mirrors the web's {@code buildArchiveUpdates}. Each input map is a full
+     * record including its {@code id}; the id becomes the key and is stripped from the stored value by
+     * {@link #toStored}.
+     */
+    public static Map<String, Object> buildArchiveUpdates(List<Map<String, Object>> items, String todayIso) {
+        Map<String, Object> updates = new LinkedHashMap<>();
+        for (Map<String, Object> item : items) {
+            String id = String.valueOf(item.get("id"));
+            Map<String, Object> stored = toStored(item);
+            stored.put("archivedOn", todayIso);
+            updates.put("archive/" + id, stored);
+            updates.put("tasks/" + id, null);
+        }
+        return updates;
+    }
+
+    /** The ISO date {@code years} before {@code todayIso}, by string surgery (matches the web). */
+    private static String yearsBefore(String todayIso, int years) {
+        int year = Integer.parseInt(todayIso.substring(0, 4));
+        String rest = todayIso.substring(4);
+        return (year - years) + rest;
+    }
+
+    /** First non-null, non-empty string, or {@code ""} — the web's {@code a || b || c || ''}. */
+    private static String firstNonEmpty(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isEmpty()) return value;
+        }
+        return "";
     }
 }
