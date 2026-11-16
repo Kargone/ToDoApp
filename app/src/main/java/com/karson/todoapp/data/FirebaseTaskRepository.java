@@ -187,7 +187,7 @@ public class FirebaseTaskRepository implements TaskRepository {
                 Project p = gson.fromJson(gson.toJson(child.getValue()), Project.class);
                 // Firebase drops null fields, so rebuild the shape; skip ill-formed rows.
                 if (p == null || p.name == null) continue;
-                projectCache.add(new Project(id, p.name, p.parentId));
+                projectCache.add(new Project(id, p.name, p.parentId, p.order));
                 syncedProjects.put(id, SyncLogic.toStored(fields));
             } catch (Exception e) {
                 Log.w(TAG, "Skipping unparseable project at " + child.getKey(), e);

@@ -53,5 +53,11 @@ Full feature parity with the web app reached (verified on the `Pixel_10a` emulat
   `SyncLogicArchiveTest`); the sweep runs once per foreground session in
   `FirebaseTaskRepository`, and the account menu's "Export archive" copies it to the
   clipboard. Mirrors the web's `archiveOldTasks` / `exportArchive`.
+- Drag to reorder in the Projects tab (long-press a row, then move): `ui/ProjectDragController.java`
+  works out the drop target (before/after a project, onto it to nest, sideways to pick the level;
+  tasks between tasks or onto a project) and `MainActivity`'s `dragHost` applies it. Order is saved
+  as `order` on projects and `projectOrder` on tasks, same as the web; pure helpers
+  (`compareOrder`, `placeId`, `moveProjectTo`) live in `logic/ProjectLogic.java`, tested in
+  `ProjectLogicOrderTest`. Mirrors the web's "Drag to reorder" block in `script.mjs`.
 
 See the project memory note for the full phase plan and decisions.

@@ -13,7 +13,7 @@ import java.util.Map;
  * <pre>
  * users/{uid}/
  *   tasks/{key}:    task fields (the key is the task's id)
- *   projects/{key}: { name, parentId? }
+ *   projects/{key}: { name, parentId?, order? }
  *   archive/{key}:  task fields + archivedOn, never loaded during normal use
  * </pre>
  *

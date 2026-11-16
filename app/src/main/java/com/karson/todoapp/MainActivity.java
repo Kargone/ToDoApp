@@ -9,6 +9,8 @@ import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -37,6 +39,7 @@ import com.karson.todoapp.logic.ViewLogic;
 import com.karson.todoapp.model.Item;
 import com.karson.todoapp.model.Project;
 import com.karson.todoapp.ui.AddItemSheet;
+import com.karson.todoapp.ui.ProjectDragController;
 import com.karson.todoapp.ui.RepeatEditorSheet;
 import com.karson.todoapp.ui.Row;
 import com.karson.todoapp.ui.TaskAdapter;
@@ -147,6 +150,7 @@ public class MainActivity extends AppCompatActivity
         animator.setMoveDuration(180);
         animator.setSupportsChangeAnimations(false);
         list.setItemAnimator(animator);
+        new ProjectDragController(list, adapter, dragHost);
 
         buildTabs();
         updateThemeIcon();
@@ -343,12 +347,17 @@ public class MainActivity extends AppCompatActivity
         return false;
     }
 
-    /** Open items first by date (undated last), struck-through items at the bottom. */
+    /**
+     * Open items first, struck-through items at the bottom. Within each group, the order set by
+     * dragging, then by date (undated last) for tasks that were never dragged.
+     */
     private List<Item> sortProjectTasks(List<Item> items) {
         List<Item> sorted = new ArrayList<>(items);
         sorted.sort((a, b) -> {
             int byDone = Boolean.compare(a.completed, b.completed);
             if (byDone != 0) return byDone;
+            int byOrder = ProjectLogic.compareOrder(a.projectOrder, b.projectOrder);
+            if (byOrder != 0) return byOrder;
             return Long.compare(projectSortKey(a), projectSortKey(b));
         });
         return sorted;
@@ -633,10 +642,64 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void moveProject(Project project, String parentId) {
-        project.parentId = parentId;
+        if (!ProjectLogic.moveProjectTo(projects, project.id, parentId, null)) return;
         if (parentId != null) setCollapsed(parentId, false);
         repository.saveProjects(projects);
         render();
+    }
+
+    // ---------- Drag to reorder (Projects tab) ----------
+
+    /** Applies and saves what {@link ProjectDragController} works out (web's dropProject / dropTask). */
+    private final ProjectDragController.Host dragHost = new ProjectDragController.Host() {
+        @Override
+        public boolean canDrag() {
+            return Categories.PROJECTS.equals(activeTab) && searchQuery.trim().isEmpty();
+        }
+
+        @Override
+        public List<Project> projects() {
+            return projects;
+        }
+
+        @Override
+        public List<String> projectTaskOrder(String projectId) {
+            return getProjectTaskOrder(projectId);
+        }
+
+        @Override
+        public void onDropProject(String projectId, String parentId, String beforeId, boolean into) {
+            if (!ProjectLogic.moveProjectTo(projects, projectId, parentId, beforeId)) return;
+            if (into) setCollapsed(parentId, false);
+            repository.saveProjects(projects);
+            render();
+        }
+
+        @Override
+        public void onDropTask(String taskId, String projectId, String beforeId, boolean into) {
+            Item task = findTask(taskId);
+            if (task == null || findProject(projectId) == null) return;
+            List<String> order = ProjectLogic.placeId(getProjectTaskOrder(projectId), taskId, beforeId);
+            task.projectId = projectId;
+            for (Item item : tasks) {
+                int index = order.indexOf(item.id);
+                if (index != -1) item.projectOrder = (double) index;
+            }
+            if (into) setCollapsed(projectId, false);
+            persistTasksAndRender();
+        }
+    };
+
+    /** Task ids in a project, top to bottom as the tree shows them (also for a collapsed project). */
+    private List<String> getProjectTaskOrder(String projectId) {
+        List<Item> inProject = new ArrayList<>();
+        for (Item item : Categories.getItemsForTab(tasks, Categories.PROJECTS, searchQuery,
+                LocalDateTime.now(), getProjectIds())) {
+            if (projectId.equals(item.projectId)) inProject.add(item);
+        }
+        List<String> ids = new ArrayList<>();
+        for (Item item : sortProjectTasks(inProject)) ids.add(item.id);
+        return ids;
     }
 
     private void deleteProject(Project project) {
@@ -710,9 +773,11 @@ public class MainActivity extends AppCompatActivity
         int pad = (int) (20 * getResources().getDisplayMetrics().density);
         LinearLayout wrap = new LinearLayout(this);
         wrap.setPadding(pad, pad / 2, pad, 0);
-        wrap.addView(input);
+        input.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        wrap.addView(input, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(titleRes)
                 .setView(wrap)
                 .setNegativeButton(R.string.cancel, null)
@@ -720,7 +785,18 @@ public class MainActivity extends AppCompatActivity
                     String name = input.getText().toString().trim();
                     if (!name.isEmpty()) cb.run(name);
                 })
-                .show();
+                .create();
+        // Open with the cursor in the field and the keyboard up, so typing can start right away.
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        }
+        input.setOnEditorActionListener((v, actionId, e) -> {
+            if (actionId != EditorInfo.IME_ACTION_DONE) return false;
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+            return true;
+        });
+        dialog.show();
+        input.requestFocus();
     }
 
     private static String createId() {
@@ -897,7 +973,7 @@ public class MainActivity extends AppCompatActivity
         if (data == null) return out;
         for (Project p : data) {
             if (p != null && p.id != null && p.name != null) {
-                out.add(new Project(p.id, p.name, p.parentId));
+                out.add(new Project(p.id, p.name, p.parentId, p.order));
             }
         }
         return out;

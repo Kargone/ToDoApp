@@ -29,7 +29,10 @@ public final class ProjectLogic {
         return project.parentId != null && ids.contains(project.parentId) ? project.parentId : null;
     }
 
-    /** Direct children of {@code parentId} (null = top level), sorted case-insensitively by name. */
+    /**
+     * Direct children of {@code parentId} (null = top level). Siblings with an order (set by
+     * dragging) come first in that order; the rest follow case-insensitively by name.
+     */
     public static List<Project> getChildProjects(List<Project> projects, String parentId) {
         Set<String> ids = idSet(projects);
         List<Project> children = new ArrayList<>();
@@ -37,8 +40,58 @@ public final class ProjectLogic {
             String resolved = resolveParentId(p, ids);
             if (equalsNullable(resolved, parentId)) children.add(p);
         }
-        children.sort((a, b) -> a.name.compareToIgnoreCase(b.name));
+        children.sort((a, b) -> {
+            int byOrder = compareOrder(a.order, b.order);
+            return byOrder != 0 ? byOrder : a.name.compareToIgnoreCase(b.name);
+        });
         return children;
+    }
+
+    /** Ascending by a manual order, with unordered (missing) values after every ordered one. */
+    public static int compareOrder(Double a, Double b) {
+        double aKey = isFinite(a) ? a : Double.POSITIVE_INFINITY;
+        double bKey = isFinite(b) ? b : Double.POSITIVE_INFINITY;
+        return Double.compare(aKey, bKey);
+    }
+
+    private static boolean isFinite(Double value) {
+        return value != null && !value.isNaN() && !value.isInfinite();
+    }
+
+    /**
+     * The ids with {@code movedId} taken out and put back in front of {@code beforeId} (or at the
+     * end when {@code beforeId} is null or absent).
+     */
+    public static List<String> placeId(List<String> ids, String movedId, String beforeId) {
+        List<String> rest = new ArrayList<>(ids);
+        rest.remove(movedId);
+        int index = beforeId == null ? -1 : rest.indexOf(beforeId);
+        rest.add(index == -1 ? rest.size() : index, movedId);
+        return rest;
+    }
+
+    /**
+     * Moves a project under {@code parentId} (null for top level), in front of the sibling
+     * {@code beforeId} or last, and renumbers that level's order. Edits the projects in place.
+     * Returns false, changing nothing, when the project is unknown or the move would put it
+     * inside itself.
+     */
+    public static boolean moveProjectTo(List<Project> projects, String projectId, String parentId,
+                                        String beforeId) {
+        if (projectId == null || !idSet(projects).contains(projectId)) return false;
+        if (projectId.equals(parentId)) return false;
+        if (parentId != null && getDescendantIds(projects, projectId).contains(parentId)) return false;
+
+        List<String> siblingIds = new ArrayList<>();
+        for (Project sibling : getChildProjects(projects, parentId)) siblingIds.add(sibling.id);
+        List<String> placed = placeId(siblingIds, projectId, beforeId);
+        for (Project project : projects) {
+            int index = placed.indexOf(project.id);
+            if (index == -1) continue;
+            project.order = (double) index;
+            if (project.id.equals(projectId)) project.parentId = parentId;
+        }
+        return true;
     }
 
     public static List<String> getDescendantIds(List<Project> projects, String projectId) {
@@ -54,7 +107,7 @@ public final class ProjectLogic {
         }
     }
 
-    /** Depth-first, alphabetical within each level: what a picker or the tree shows top to bottom. */
+    /** Depth-first, in sibling order within each level: what a picker or the tree shows top to bottom. */
     public static List<FlatProject> flattenProjects(List<Project> projects) {
         List<FlatProject> flat = new ArrayList<>();
         visitFlatten(projects, null, 0, new ArrayList<>(), flat);

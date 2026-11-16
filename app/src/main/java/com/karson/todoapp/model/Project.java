@@ -8,6 +8,8 @@ public class Project {
     public String id;
     public String name;
     public String parentId;
+    /** Manual position among siblings, set by dragging; null (absent in JSON) until then. */
+    public Double order;
 
     public Project() {}
 
@@ -15,5 +17,10 @@ public class Project {
         this.id = id;
         this.name = name;
         this.parentId = parentId;
+    }
+
+    public Project(String id, String name, String parentId, Double order) {
+        this(id, name, parentId);
+        this.order = order;
     }
 }

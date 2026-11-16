@@ -66,6 +66,16 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.listener = listener;
     }
 
+    /** The rows on screen, in order (read-only). */
+    public List<Row> getRows() {
+        return java.util.Collections.unmodifiableList(rows);
+    }
+
+    /** Whether a task is being renamed inline right now. */
+    public boolean isEditing() {
+        return editingTaskId != null;
+    }
+
     public void submit(List<Row> next, String activeTab, LocalDateTime now) {
         this.activeTab = activeTab;
         this.now = now;
@@ -123,6 +133,8 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         Row row = rows.get(position);
+        // A view recycled mid-drag may still carry the dimmed "being dragged" alpha.
+        holder.itemView.setAlpha(1f);
         if (holder instanceof ProjectHeadHolder) {
             bindProjectHead((ProjectHeadHolder) holder, row);
         } else {

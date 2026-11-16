@@ -26,6 +26,8 @@ public class Item {
     // Projects (wired up in a later phase)
     public String projectId;
     public boolean inDateTabs;
+    /** Manual position within its project, set by dragging; null (absent in JSON) until then. */
+    public Double projectOrder;
 
     // Repeat (engine built in a later phase)
     public RepeatRule repeatRule;
@@ -72,6 +74,7 @@ public class Item {
         c.endTime = endTime;
         c.projectId = projectId;
         c.inDateTabs = inDateTabs;
+        c.projectOrder = projectOrder;
         c.repeatRule = repeatRule;
         c.isVirtual = isVirtual;
         c.minShowTime = minShowTime;
