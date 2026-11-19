@@ -154,6 +154,32 @@ public class FirebaseTaskRepository implements TaskRepository {
         });
     }
 
+    /**
+     * One server read via {@code get()}, which asks the server when connected and only falls back to
+     * the persisted cache when offline. (A single-value or live listener answers from the cache
+     * first, so with persistence on it can hand back yesterday's copy.) Any failure falls back to
+     * {@link #loadOnce}, so the caller always gets an answer.
+     */
+    @Override
+    public void loadFresh(SnapshotCallback callback) {
+        tasksRef.get().addOnCompleteListener(taskRead -> {
+            if (!taskRead.isSuccessful() || taskRead.getResult() == null) {
+                Log.w(TAG, "loadFresh tasks failed; using cache", taskRead.getException());
+                loadOnce(callback);
+                return;
+            }
+            applyTasksSnapshot(taskRead.getResult());
+            projectsRef.get().addOnCompleteListener(projectRead -> {
+                if (projectRead.isSuccessful() && projectRead.getResult() != null) {
+                    applyProjectsSnapshot(projectRead.getResult());
+                } else {
+                    Log.w(TAG, "loadFresh projects failed", projectRead.getException());
+                }
+                callback.onLoaded(new ArrayList<>(taskCache), new ArrayList<>(projectCache));
+            });
+        });
+    }
+
     /** Parse a tasks snapshot into {@link #taskCache} and reset the {@link #syncedTasks} baseline. */
     private void applyTasksSnapshot(DataSnapshot snapshot) {
         taskCache.clear();

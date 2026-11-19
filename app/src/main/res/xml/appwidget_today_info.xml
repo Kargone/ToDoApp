@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Today list widget: scrollable, resizable. Refreshed explicitly on toggle and whenever the app
      re-renders; updatePeriodMillis gives a periodic safety refresh (clamped by the OS to ~30 min)
-     so it doesn't drift stale, and ACTION_DATE_CHANGED (manifest) handles the midnight rollover. -->
+     while the phone is awake, a midnight alarm (TodayWidgetProvider.scheduleMidnightRefresh) handles
+     the day rollover, and AlarmSyncWorker redraws it after each background server sync. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="180dp"
     android:minHeight="110dp"

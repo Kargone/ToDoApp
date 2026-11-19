@@ -6,6 +6,7 @@ import android.content.Intent;
 
 import com.karson.todoapp.data.TaskRepositories;
 import com.karson.todoapp.data.TaskRepository;
+import com.karson.todoapp.widget.TodayWidgetProvider;
 
 /**
  * Re-arms task alarms after a reboot — AlarmManager drops all alarms on restart. Reads the current
@@ -22,6 +23,8 @@ public class BootReceiver extends BroadcastReceiver {
             return;
         }
         final Context app = context.getApplicationContext();
+        // Reboots and updates drop every pending alarm, including the widget's midnight rollover.
+        TodayWidgetProvider.scheduleMidnightRefresh(app);
         final PendingResult result = goAsync();
         final TaskRepository repo = TaskRepositories.create(app);
         repo.loadOnce((tasks, projects) -> {

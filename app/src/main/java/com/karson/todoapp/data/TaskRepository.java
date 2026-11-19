@@ -44,6 +44,15 @@ public interface TaskRepository {
         callback.onLoaded(loadTasks(), loadProjects());
     }
 
+    /**
+     * Like {@link #loadOnce}, but prefers the server's current copy over the on-disk cache when
+     * online (falling back to the cache when not). Used by the background sync, whose whole job is
+     * to pick up changes made on another device. Local storage has no server, so it's just a load.
+     */
+    default void loadFresh(SnapshotCallback callback) {
+        loadOnce(callback);
+    }
+
     interface SnapshotCallback {
         void onLoaded(List<Item> tasks, List<Project> projects);
     }
