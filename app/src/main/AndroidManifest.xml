@@ -105,6 +105,11 @@
             android:name=".alarm.AlarmReceiver"
             android:exported="false" />
 
+        <!-- Per-task notifications (an alarm without the ringing) -->
+        <receiver
+            android:name=".alarm.NotifyReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".alarm.BootReceiver"
             android:exported="true">

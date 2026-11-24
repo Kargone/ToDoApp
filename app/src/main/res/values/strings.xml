@@ -68,6 +68,19 @@
     <string name="change_alarm">Change alarm</string>
     <string name="remove_alarm">Remove alarm</string>
 
+    <!-- Notifications -->
+    <string name="notify_channel_name">Task notifications</string>
+    <string name="notify_channel_desc">Reminders for tasks with a notification time set</string>
+    <string name="notify_notification_text">Task reminder</string>
+    <string name="notify_label">Notification</string>
+    <string name="notify_time_label">Notification time</string>
+    <string name="set_notify">Set notification</string>
+    <string name="change_notify">Change notification</string>
+    <string name="remove_notify">Remove notification</string>
+
+    <!-- Fast forward -->
+    <string name="fast_forward">Pick a date…</string>
+
     <!-- Widgets -->
     <string name="widget_quick_add_label">Add task</string>
     <string name="widget_quick_add_description">Add a task to ToDo in one tap.</string>

@@ -104,6 +104,26 @@
         android:textSize="11sp"
         android:visibility="gone" />
 
+    <!-- Notification indicator: bubble + the time it notifies -->
+    <ImageView
+        android:id="@+id/row_notify"
+        android:layout_width="13dp"
+        android:layout_height="13dp"
+        android:layout_marginStart="6dp"
+        android:src="@drawable/ic_notify"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        android:tint="@color/muted" />
+
+    <TextView
+        android:id="@+id/row_notify_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="3dp"
+        android:textColor="@color/muted"
+        android:textSize="11sp"
+        android:visibility="gone" />
+
     <!-- Time column -->
     <TextView
         android:id="@+id/row_time"

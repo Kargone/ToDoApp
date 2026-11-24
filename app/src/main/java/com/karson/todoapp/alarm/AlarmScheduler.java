@@ -72,6 +72,9 @@ public final class AlarmScheduler {
         }
 
         prefs.edit().putStringSet(KEY_SCHEDULED, active).apply();
+
+        // Silent-ish notifications ride the same triggers, so every caller re-arms them too.
+        NotificationScheduler.rescheduleAll(context, tasks);
     }
 
     /** Schedule (or snooze) a single task alarm for an absolute time. */
@@ -143,17 +146,22 @@ public final class AlarmScheduler {
      * next after each fires). For a one-off task it is simply its date at the alarm time.
      */
     public static long nextTrigger(Item task, long now) {
-        if (task.alarmTime == null || task.alarmTime.isEmpty()) return -1;
+        return nextTrigger(task, task.alarmTime, now);
+    }
+
+    /** As {@link #nextTrigger(Item, long)}, for any "HH:mm" time on the task's day(s). */
+    public static long nextTrigger(Item task, String timeOfDay, long now) {
+        if (timeOfDay == null || timeOfDay.isEmpty()) return -1;
         final LocalTime time;
         try {
-            time = LocalTime.parse(task.alarmTime);
+            time = LocalTime.parse(timeOfDay);
         } catch (Exception e) {
             return -1;
         }
         ZoneId zone = ZoneId.systemDefault();
 
         if (task.repeatRule == null) {
-            long single = triggerMillis(task);
+            long single = triggerMillis(task, timeOfDay);
             return single > now ? single : -1;
         }
 
@@ -181,11 +189,15 @@ public final class AlarmScheduler {
 
     /** Epoch millis of the task's own date at its alarm time, or -1 if it has no valid alarm. */
     public static long triggerMillis(Item task) {
-        if (task.alarmTime == null || task.alarmTime.isEmpty()) return -1;
+        return triggerMillis(task, task.alarmTime);
+    }
+
+    private static long triggerMillis(Item task, String timeOfDay) {
+        if (timeOfDay == null || timeOfDay.isEmpty()) return -1;
         String date = task.itemDate();
         if (date == null || date.isEmpty()) return -1;
         try {
-            LocalDateTime when = LocalDateTime.of(LocalDate.parse(date), LocalTime.parse(task.alarmTime));
+            LocalDateTime when = LocalDateTime.of(LocalDate.parse(date), LocalTime.parse(timeOfDay));
             return when.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
         } catch (Exception e) {
             Log.w(TAG, "Bad alarm date/time for task " + task.id, e);

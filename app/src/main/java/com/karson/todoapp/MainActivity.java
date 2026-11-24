@@ -482,6 +482,7 @@ public class MainActivity extends AppCompatActivity
             popup.getMenu().add("Tomorrow  +1d").setOnMenuItemClickListener(mi -> { postponeTask(item, 1); return true; });
             popup.getMenu().add("In 2 days  +2d").setOnMenuItemClickListener(mi -> { postponeTask(item, 2); return true; });
             popup.getMenu().add("In 3 days  +3d").setOnMenuItemClickListener(mi -> { postponeTask(item, 3); return true; });
+            popup.getMenu().add(R.string.fast_forward).setOnMenuItemClickListener(mi -> { openFastForwardPicker(item); return true; });
         }
 
         // Alarm actions (dated, non-virtual tasks can ring at a time on their day).
@@ -493,6 +494,18 @@ public class MainActivity extends AppCompatActivity
             if (hasAlarm) {
                 popup.getMenu().add(R.string.remove_alarm).setOnMenuItemClickListener(mi -> {
                     item.alarmTime = null;
+                    persistTasksAndRender();
+                    return true;
+                });
+            }
+
+            boolean hasNotify = item.notifyTime != null && !item.notifyTime.isEmpty();
+            String notifyLabel = hasNotify ? getString(R.string.change_notify) + "  " + ViewLogic.formatClock(item.notifyTime)
+                    : getString(R.string.set_notify);
+            popup.getMenu().add(notifyLabel).setOnMenuItemClickListener(mi -> { openNotifyPicker(item); return true; });
+            if (hasNotify) {
+                popup.getMenu().add(R.string.remove_notify).setOnMenuItemClickListener(mi -> {
+                    item.notifyTime = null;
                     persistTasksAndRender();
                     return true;
                 });
@@ -550,6 +563,40 @@ public class MainActivity extends AppCompatActivity
             item.alarmTime = String.format(Locale.US, "%02d:%02d", hour, minute);
             persistTasksAndRender();
         }, base.getHour(), base.getMinute(), false).show();
+    }
+
+    /** Pick a notification time for a task; it will notify at that time on the task's day. */
+    private void openNotifyPicker(Item item) {
+        String initial = item.notifyTime != null && !item.notifyTime.isEmpty() ? item.notifyTime
+                : (item.itemTime() != null && !item.itemTime().isEmpty() ? item.itemTime() : "09:00");
+        LocalTime base = LocalTime.parse(initial);
+        new android.app.TimePickerDialog(this, (view, hour, minute) -> {
+            item.notifyTime = String.format(Locale.US, "%02d:%02d", hour, minute);
+            persistTasksAndRender();
+        }, base.getHour(), base.getMinute(), false).show();
+    }
+
+    /** Fast-forward a dated task (or event) to a picked day, today or later; its time is kept. */
+    private void openFastForwardPicker(Item item) {
+        if (item.noDue) return;
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate current;
+        try {
+            current = java.time.LocalDate.parse(item.itemDate());
+        } catch (Exception e) {
+            current = today;
+        }
+        java.time.LocalDate base = current.isBefore(today) ? today : current;
+        android.app.DatePickerDialog dialog = new android.app.DatePickerDialog(this, (view, year, month, day) -> {
+            String iso = java.time.LocalDate.of(year, month + 1, day).toString();
+            if (item.isEvent()) item.startDate = iso;
+            else item.dueDate = iso;
+            item.minShowTime = null; // a "Later today" hide shouldn't outlive a move to another day
+            persistTasksAndRender();
+        }, base.getYear(), base.getMonthValue() - 1, base.getDayOfMonth());
+        dialog.getDatePicker().setMinDate(today.atStartOfDay(java.time.ZoneId.systemDefault())
+                .toInstant().toEpochMilli());
+        dialog.show();
     }
 
     /** Postpone a dated task: less than a day hides it from Today; whole days shift its date. */
@@ -865,11 +912,19 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onRepeatRuleSaved(String taskId, com.karson.todoapp.model.RepeatRule rule, String alarmTime) {
+    public String notifyTimeFor(String taskId) {
+        Item t = findTask(taskId);
+        return t != null ? t.notifyTime : null;
+    }
+
+    @Override
+    public void onRepeatRuleSaved(String taskId, com.karson.todoapp.model.RepeatRule rule,
+                                  String alarmTime, String notifyTime) {
         Item t = findTask(taskId);
         if (t != null) {
             t.repeatRule = rule;
             t.alarmTime = alarmTime != null && !alarmTime.isEmpty() ? alarmTime : null;
+            t.notifyTime = notifyTime != null && !notifyTime.isEmpty() ? notifyTime : null;
             persistTasksAndRender();
         }
     }

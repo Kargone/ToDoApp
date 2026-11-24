@@ -1,0 +1,20 @@
+<!-- Notification: a speech bubble, distinct from the alarm's bell. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="@color/fg">
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/fg"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M6,5 h12 a2,2 0 0,1 2,2 v8 a2,2 0 0,1 -2,2 h-7 l-4,3 v-3 h-1 a2,2 0 0,1 -2,-2 v-8 a2,2 0 0,1 2,-2 z" />
+    <path
+        android:strokeColor="@color/fg"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M8.5,10 h7 M8.5,13 h4.5" />
+</vector>

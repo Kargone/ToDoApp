@@ -43,6 +43,13 @@ public class Item {
      */
     public String alarmTime;
 
+    /**
+     * Optional notification time "HH:mm": like {@link #alarmTime} (same day, every repeat
+     * occurrence) but posts an ordinary notification instead of ringing. Additive like alarmTime;
+     * the web app keeps it via object spreads.
+     */
+    public String notifyTime;
+
     /** Snapshot that lets a repeat completion be undone the same day. */
     public Undo undo;
 
@@ -79,6 +86,7 @@ public class Item {
         c.isVirtual = isVirtual;
         c.minShowTime = minShowTime;
         c.alarmTime = alarmTime;
+        c.notifyTime = notifyTime;
         c.undo = undo;
         return c;
     }

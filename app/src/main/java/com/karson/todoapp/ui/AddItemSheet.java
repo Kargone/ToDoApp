@@ -52,10 +52,13 @@ public class AddItemSheet extends BottomSheetDialogFragment {
     private String dueDate = "", dueTime = "";
     private String startDate = "", startTime = "", endTime = "";
     private String alarmTime = "";
+    private String notifyTime = "";
 
     private TextView typeTask, typeEvent;
     private View taskFields, eventFields, taskSectionField, projectRow, dateTabsSwitch;
-    private View alarmRow, alarmControls;
+    private View alarmRow, alarmControls, notifyRow, notifyControls;
+    private TextView notifyTimeView;
+    private SwitchMaterial notifySwitch;
     private TextView dueDateView, dueTimeView, startDateView, startTimeView, endTimeView, alarmTimeView;
     private SwitchMaterial noDue, inDateTabs, repeatSwitch, alarmSwitch;
     private Spinner sectionSpinner, projectSpinner;
@@ -112,6 +115,10 @@ public class AddItemSheet extends BottomSheetDialogFragment {
         alarmControls = v.findViewById(R.id.alarm_controls);
         alarmSwitch = v.findViewById(R.id.alarm_switch);
         alarmTimeView = v.findViewById(R.id.alarm_time_value);
+        notifyRow = v.findViewById(R.id.notify_row);
+        notifyControls = v.findViewById(R.id.notify_controls);
+        notifySwitch = v.findViewById(R.id.notify_switch);
+        notifyTimeView = v.findViewById(R.id.notify_time_value);
 
         sectionSpinner.setAdapter(new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_spinner_dropdown_item, new String[]{"Today", "Later"}));
@@ -139,6 +146,11 @@ public class AddItemSheet extends BottomSheetDialogFragment {
             if (checked && alarmTime.isEmpty()) { alarmTime = "09:00"; renderTime(alarmTimeView, alarmTime); }
         });
         alarmTimeView.setOnClickListener(x -> pickTime(alarmTime, iso -> { alarmTime = iso; renderTime(alarmTimeView, iso); }));
+        notifySwitch.setOnCheckedChangeListener((btn, checked) -> {
+            notifyControls.setVisibility(checked ? View.VISIBLE : View.GONE);
+            if (checked && notifyTime.isEmpty()) { notifyTime = "09:00"; renderTime(notifyTimeView, notifyTime); }
+        });
+        notifyTimeView.setOnClickListener(x -> pickTime(notifyTime, iso -> { notifyTime = iso; renderTime(notifyTimeView, iso); }));
         projectSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> p, View vw, int pos, long id) { updateDateTabsSwitch(); }
             @Override public void onNothingSelected(AdapterView<?> p) {}
@@ -154,6 +166,7 @@ public class AddItemSheet extends BottomSheetDialogFragment {
         renderTime(startTimeView, startTime);
         renderTime(endTimeView, endTime);
         renderTime(alarmTimeView, alarmTime);
+        renderTime(notifyTimeView, notifyTime);
 
         // A project's "Add task" preselects it and starts undated.
         String preselect = getArguments() != null ? getArguments().getString(ARG_PROJECT_ID) : null;
@@ -194,12 +207,14 @@ public class AddItemSheet extends BottomSheetDialogFragment {
         updateAlarmRow();
     }
 
-    /** The alarm only makes sense when the item has a day to ring on (dated task or any event). */
+    /** Alarm and notification only make sense when the item has a day (dated task or any event). */
     private void updateAlarmRow() {
         if (alarmRow == null) return;
         boolean dated = "event".equals(type) || !noDue.isChecked();
         alarmRow.setVisibility(dated ? View.VISIBLE : View.GONE);
         alarmControls.setVisibility(dated && alarmSwitch.isChecked() ? View.VISIBLE : View.GONE);
+        notifyRow.setVisibility(dated ? View.VISIBLE : View.GONE);
+        notifyControls.setVisibility(dated && notifySwitch.isChecked() ? View.VISIBLE : View.GONE);
     }
 
     private void updateNoDue(boolean checked) {
@@ -275,6 +290,9 @@ public class AddItemSheet extends BottomSheetDialogFragment {
         boolean dated = "event".equals(type) || !noDue.isChecked();
         if (dated && alarmSwitch.isChecked() && !alarmTime.isEmpty()) {
             item.alarmTime = alarmTime;
+        }
+        if (dated && notifySwitch.isChecked() && !notifyTime.isEmpty()) {
+            item.notifyTime = notifyTime;
         }
 
         if (host != null) host.onAddItem(item);

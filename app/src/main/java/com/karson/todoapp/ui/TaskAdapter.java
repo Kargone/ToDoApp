@@ -112,7 +112,7 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 + "|" + i.isVirtual + "|" + i.type + "|" + i.text + "|" + i.dueDate + "|" + i.dueTime
                 + "|" + i.startDate + "|" + i.startTime + "|" + i.endTime
                 + "|" + i.projectId + "|" + i.minShowTime + "|" + (i.repeatRule != null)
-                + "|" + i.alarmTime;
+                + "|" + i.alarmTime + "|" + i.notifyTime;
     }
 
     @Override
@@ -313,6 +313,11 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         h.alarmTime.setVisibility(hasAlarm ? View.VISIBLE : View.GONE);
         if (hasAlarm) h.alarmTime.setText(ViewLogic.formatClock(item.alarmTime));
 
+        boolean hasNotify = !item.completed && item.notifyTime != null && !item.notifyTime.isEmpty();
+        h.notify.setVisibility(hasNotify ? View.VISIBLE : View.GONE);
+        h.notifyTime.setVisibility(hasNotify ? View.VISIBLE : View.GONE);
+        if (hasNotify) h.notifyTime.setText(ViewLogic.formatClock(item.notifyTime));
+
         ViewLogic.TimeState state = ViewLogic.timeState(item, now);
         switch (state) {
             case LATE:
@@ -410,6 +415,8 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         final TextView time;
         final ImageView alarm;
         final TextView alarmTime;
+        final ImageView notify;
+        final TextView notifyTime;
         final ImageButton menu;
 
         RowHolder(@NonNull View v) {
@@ -424,6 +431,8 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             time = v.findViewById(R.id.row_time);
             alarm = v.findViewById(R.id.row_alarm);
             alarmTime = v.findViewById(R.id.row_alarm_time);
+            notify = v.findViewById(R.id.row_notify);
+            notifyTime = v.findViewById(R.id.row_notify_time);
             menu = v.findViewById(R.id.row_menu);
         }
     }
